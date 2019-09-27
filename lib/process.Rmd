@@ -1,0 +1,75 @@
+---
+title: "process"
+author: "Lingyi"
+date: "9/27/2019"
+output: html_document
+---
+```{r}
+library("Hmisc")
+```
+
+
+```{r}
+df_2015 <- read.csv("./data/2015_Street_Tree_Census.csv", stringsAsFactors = F)
+df_2015$latitude <- as.numeric(df_2015$latitude)
+df_2015$longitude <- as.numeric(df_2015$longitude)
+
+df_2005 <- read.csv("./data/2005_Street_Tree_Census.csv", stringsAsFactors = F)
+df_2005$latitude <- as.numeric(df_2005$latitude)
+df_2005$longitude <- as.numeric(df_2005$longitude)
+
+df_1995 <- read.csv("./data/1995_Street_Tree_Census.csv", stringsAsFactors = F)
+df_1995$latitude <- as.numeric(df_1995$Latitude)
+df_1995$longitude <- as.numeric(df_1995$Longitude)
+
+```
+
+
+Clean the tree Types 
+```{r}
+df_2015$spc_common <- capitalize(df_2015$spc_common)
+```
+
+
+
+```{r}
+saveRDS(df_2015[c(1:1000),], "./data/sample_data_2015.rds")
+saveRDS(df_2005[c(1:1000),], "./data/sample_data_2005.rds")
+saveRDS(df_1995[c(1:1000),], "./data/sample_data_1995.rds")
+```
+
+```{r}
+saveRDS(df_2015, "./data/data_2015.rds")
+saveRDS(df_2005, "./data/data_2005.rds")
+saveRDS(df_1995, "./data/data_1995.rds")
+```
+
+# Tree Types 
+## selections 
+```{r}
+spc_common_vector <- unique(df_2015$spc_common)
+spc_common_vector <- sort(spc_common_vector)
+
+simpleCap <- function(x) {
+  s <- strsplit(x, " ")[[1]]
+  paste(toupper(substring(s, 1,1)), substring(s, 2),
+      sep="", collapse=" ")
+}
+
+
+spc_common_vector <- sapply(spc_common_vector, simpleCap)
+```
+
+```{r}
+spc_common_vector
+```
+
+```{r}
+unique(df_2015$spc_common)
+```
+
+
+```{r}
+unique(df_2015[1000,]$spc_common)
+```
+
