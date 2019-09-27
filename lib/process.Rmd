@@ -10,15 +10,15 @@ library("Hmisc")
 
 
 ```{r}
-df_2015 <- read.csv("./data/2015_Street_Tree_Census.csv", stringsAsFactors = F)
+df_2015 <- read.csv("../data/2015_Street_Tree_Census.csv", stringsAsFactors = F)
 df_2015$latitude <- as.numeric(df_2015$latitude)
 df_2015$longitude <- as.numeric(df_2015$longitude)
 
-df_2005 <- read.csv("./data/2005_Street_Tree_Census.csv", stringsAsFactors = F)
+df_2005 <- read.csv("../data/2005_Street_Tree_Census.csv", stringsAsFactors = F)
 df_2005$latitude <- as.numeric(df_2005$latitude)
 df_2005$longitude <- as.numeric(df_2005$longitude)
 
-df_1995 <- read.csv("./data/1995_Street_Tree_Census.csv", stringsAsFactors = F)
+df_1995 <- read.csv("../data/1995_Street_Tree_Census.csv", stringsAsFactors = F)
 df_1995$latitude <- as.numeric(df_1995$Latitude)
 df_1995$longitude <- as.numeric(df_1995$Longitude)
 
@@ -33,15 +33,15 @@ df_2015$spc_common <- capitalize(df_2015$spc_common)
 
 
 ```{r}
-saveRDS(df_2015[c(1:1000),], "./data/sample_data_2015.rds")
-saveRDS(df_2005[c(1:1000),], "./data/sample_data_2005.rds")
-saveRDS(df_1995[c(1:1000),], "./data/sample_data_1995.rds")
+saveRDS(df_2015[c(1:1000),], "../data/sample_data_2015.rds")
+saveRDS(df_2005[c(1:1000),], "../data/sample_data_2005.rds")
+saveRDS(df_1995[c(1:1000),], "../data/sample_data_1995.rds")
 ```
 
 ```{r}
-saveRDS(df_2015, "./data/data_2015.rds")
-saveRDS(df_2005, "./data/data_2005.rds")
-saveRDS(df_1995, "./data/data_1995.rds")
+saveRDS(df_2015, "../data/data_2015.rds")
+saveRDS(df_2005, "../data/data_2005.rds")
+saveRDS(df_1995, "../data/data_1995.rds")
 ```
 
 # Tree Types 
