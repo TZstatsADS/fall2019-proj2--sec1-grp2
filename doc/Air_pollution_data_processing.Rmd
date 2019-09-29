@@ -1,0 +1,107 @@
+---
+title: "Air_Pollution data preprocessing"
+author: "Zihan Zhou (zz2573)"
+date: "9/27/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Reference: [raster package](https://rspatial.org/raster/index.html), [data processing example](https://gis.stackexchange.com/questions/142156/r-how-to-get-latitudes-and-longitudes-from-a-rasterlayer)
+
+# Load in required libraries
+
+```{r}
+library(sp)
+library(raster)
+library(rgdal)
+library(ggmap)
+```
+
+# Load in grid data
+
+```{r}
+data_transform <- function(file){
+  grid_data <- raster(file)
+  points_data <- rasterToPoints(grid_data, spatial = TRUE)
+  #proj4string(points_data)
+  geo_prj <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
+  points_data <- spTransform(points_data, CRS(geo_prj))
+  #proj4string(points_data)
+  output <- data.frame(points_data@data, long = coordinates(points_data)[,1],
+                       lat = coordinates(points_data)[,2])
+  return(output)
+}
+
+pollutant <- c("pm", "no2", "no", "bc")
+pollution_data <- data.frame()
+for(pol in pollutant){
+  for(i in 1:9){
+    #print(i)
+    file <- paste("../data/AnnAvg1_9_300mRaster/aa", as.character(i), "_",
+                  pol, "300m/w001001.adf", 
+                  sep = "")
+    output <- data_transform(file)
+    output$year <- i + 2008
+    output$pollutant <- pol
+    pollution_data <- rbind(pollution_data, output)
+  }
+}
+
+colnames(pollution_data)[1] <- "measure"
+save(pollution_data, file = "../data/pollution.RData")
+load("../data/pollution.RData")
+```
+
+```{r}
+Colors <- c(rgb(0, 255, 0, maxColorValue = 255), rgb(50, 255, 0, maxColorValue = 255), 
+            rgb(100, 255, 0, maxColorValue = 255), rgb(150, 255, 0, maxColorValue = 255),
+            rgb(200, 255, 0, maxColorValue = 255), rgb(255, 255, 0, maxColorValue = 255),
+            rgb(255, 205, 0, maxColorValue = 255), rgb(255, 155, 0, maxColorValue = 255),
+            rgb(255, 105, 0, maxColorValue = 255), rgb(255, 55, 0, maxColorValue = 255),
+            rgb(255, 0, 0, maxColorValue = 255))
+
+Cc <- c(rgb(0, 255, 0, maxColorValue = 255), rgb(125, 255, 0, maxColorValue = 255),
+        rgb(255, 255, 0, maxColorValue = 255), rgb(255, 125, 0, maxColorValue = 255),
+        rgb(255, 0, 0, maxColorValue = 255))
+
+p1 <- ggplot(data = a) +
+  geom_point(aes(long, lat, col = measure, size = 0.5), size = 0.1) +
+  scale_colour_gradientn(colours = Colors, 
+                         breaks = seq(min(a$measure), max(a$measure), 25))
+
+p2 <- ggplot(data = a) +
+  geom_point(aes(long, lat, col = measure)) +
+  scale_colour_gradientn(colours = Cc, 
+                         breaks = seq(min(a$measure), max(a$measure), 25))
+
+p1
+```
+```{r}
+p1
+```
+
+```{r}
+nycmap <- get_map("New York City", maptype = "terrain", zoom = 11)
+ggmap(nycmap) +
+  geom_point(data = a,  
+             aes(long, lat, col = measure), size = 0.05) +
+  scale_colour_gradientn(colours = Colors, 
+                         breaks = seq(min(a$measure), max(a$measure), 25))
+  
+```
+
+```{r}
+pal <- colorNumeric(palette = colorRampPalette(c("green", "red"))(10),
+                    domain = a$measure)
+#NYC_coord <- geocode("New York City")
+m <- leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  setView(lat = NYC_coord$lat, lng = NYC_coord$lon, zoom = 10) %>%
+  addCircles(lng = a$long, lat = a$lat, color = pal(a$measure), radius = 2, opacity = 0.1)
+m
+
+```
+
