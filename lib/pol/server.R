@@ -5,7 +5,7 @@ library(sp)
 library(raster)
 library(rgdal)
 
-#load("../../data/pollution.RData")
+load("../../data/pollution.RData")
 
 
 NYC_coord <- c(lon = -74.00597, lat = 40.71278)
