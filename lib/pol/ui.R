@@ -1,3 +1,10 @@
+library(leaflet)
+library(ggmap)
+library(shiny)
+library(sp)
+library(raster)
+library(rgdal)
+
 ui <- fluidPage(
     
     sidebarPanel(
