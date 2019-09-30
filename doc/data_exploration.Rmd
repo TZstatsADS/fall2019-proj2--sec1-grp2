@@ -1,0 +1,187 @@
+---
+title: "data_exploration"
+author: "Tong Dai"
+date: "9/29/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load packages, message=FALSE, warning=FALSE,echo=FALSE}
+packages.used=c("dplyr","ggplot2","tidyr","readr","DT","lubridate","ggmap","choroplethrZip","devtools","shiny","choroplethr","devtools","tidyverse","hrbrthemes","viridis","plotly","d3heatmap","heatmaply")
+
+
+if (!require("choroplethrZip")) 
+  devtools::install_github('arilamstein/choroplethrZip@v1.5.0')
+
+
+# check packages that need to be installed.
+packages.needed=setdiff(packages.used, 
+                        intersect(installed.packages()[,1], 
+                                  packages.used))
+# install additional packages
+if(length(packages.needed)>0){
+  install.packages(packages.needed, dependencies = TRUE)
+}
+# load packages
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(readr)
+library(DT)
+library(lubridate)
+library(ggmap)
+library(shiny)
+library(choroplethr)
+library(choroplethrZip)
+library(devtools)
+library(tidyverse)
+library(hrbrthemes)
+library(viridis)
+library(plotly)
+library(d3heatmap)
+library(heatmaply)
+```
+
+
+
+#### Read Data
+
+```{r}
+setwd("~/Dropbox/Courses/Columbia/Applied Data Science/fall2019-proj2--sec1-grp2/data")
+
+df_2015 <- read.csv("../data/2015_Street_Tree_Census_Tree_Data.csv", stringsAsFactors = F)
+
+selected_cols <- c('tree_id','tree_dbh','status','health','spc_common','address','postcode','zip_city','borough','state','latitude','longitude')
+
+processed_df <- df_2015[,selected_cols]
+
+processed_df$full_address <- mutate(processed_df, full_address = paste(address, zip_city, state, postcode, sep = ', '))
+
+```
+
+
+#### distribution of tree by areas
+
+```{r}
+
+# distribution of tree by areas
+processed_df %>% 
+  group_by(borough)%>% 
+  summarise(avg_dbh = mean(tree_dbh, na.rm = TRUE))%>%
+  arrange(avg_dbh) %>%
+  ggplot(., aes(x= reorder(borough, avg_dbh), y=avg_dbh)) +
+  geom_bar(stat='identity', fill="#1CCCC6") + 
+  ylab("Avg of Tree Diameter Measured") + xlab ("") + 
+  ggtitle("largest tree size by region") + 
+  theme_minimal() + 
+  scale_x_discrete(labels = function(labels) {
+    sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
+  })
+
+```
+
+
+#### tree health status across regions
+
+```{r}
+processed_df%>% 
+  group_by(borough)%>% 
+  summarise(rate = n()/nrow(processed_df))%>%
+  arrange(rate)%>%
+  ggplot(., aes(x= reorder(borough, rate), y=rate)) +
+  geom_bar(stat='identity', fill="#1CCCC6") + 
+  ylab("trees count by regions") + xlab ("") + 
+  ggtitle("Which regions has most trees") + 
+  theme_minimal() + 
+  scale_x_discrete(labels = function(labels) {
+    sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
+  })
+
+```
+
+
+#### tree count by health status across boro
+
+```{r}
+processed_df %>% 
+  group_by(borough,status)%>% 
+  summarise(rate = n()/nrow(processed_df))%>%
+  arrange(borough,status)%>%
+  ggplot(., aes(x= reorder(borough, rate), y=rate, fill = factor(status))) +
+  stat_summary(fun.y=mean, geom="bar",position=position_dodge(1))
+```
+
+
+#### health tree by narrowed areas
+```{r}
+processed_df[processed_df$status == 'Alive',]%>% 
+  group_by(spc_common)%>% 
+  summarise(rate = n()/nrow(processed_df))%>%
+  arrange(desc(rate))%>%
+  slice(1:10) %>%
+  ggplot(., aes(x= reorder(spc_common, rate), y=rate)) +
+  geom_bar(stat='identity', fill="#1CCCC6") + 
+  ylab("Tree count percentage") + xlab ("") + 
+  ggtitle("Alive tree by tree type") + 
+  theme_minimal() + 
+  scale_x_discrete(labels = function(labels) {
+    sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
+  })+
+  coord_flip()
+```
+
+#### health condition for trees
+
+```{r}
+processed_df_health <- processed_df[processed_df$health != "",]
+processed_df_health%>%
+  group_by(health)%>%
+  summarise(rate = n()/nrow(processed_df_health))%>%
+  ggplot(., aes(x= reorder(health, rate), y=rate)) +
+  geom_bar(stat='identity', fill="#1CCCC6") + 
+  ylab("Tree count percentage") + xlab ("") + 
+  ggtitle("Alive tree by tree type") + 
+  theme_minimal() + 
+  scale_x_discrete(labels = function(labels) {
+    sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
+  })
+```
+
+```{r}
+
+str(processed_df)
+
+```
+
+
+```{r}
+
+p <- heatmaply(processed_df[,c('zip_city','health')], 
+        dendrogram = "none",
+        xlab = "", ylab = "", 
+        main = "",
+        scale = "column",
+        margins = c(60,100,40,20),
+        grid_color = "white",
+        grid_width = 0.00001,
+        titleX = FALSE,
+        hide_colorbar = TRUE,
+        branches_lwd = 0.1,
+        label_names = c("Country", "Feature:", "Value"),
+        fontsize_row = 5, fontsize_col = 5,
+        labCol = colnames(mat),
+        labRow = rownames(mat),
+        heatmap_layers = theme(axis.line=element_blank())
+        )
+```
+
+
+
+
+
+
+
