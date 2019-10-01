@@ -16,8 +16,13 @@ ui <- fluidPage(
                             "Callery pear", "Chinese fringetree", "Crab apple", "Crepe myrtle", "Douglas-fir", "Eastern redcedar", "Ginkgo", "Hedge maple", 
                             "Honeylocust", "Japanese zelkova", "Kentucky yellowwood", "London planetree", "Mulberry", "Northern red oak", "Norway maple", "Ohio buckeye", 
                             "Pignut hickory", "Pin oak", "Red maple", "Sawtooth oak", "Scarlet oak", "Silver linden", "Silver maple", "Sophora", 
-                            "Southern magnolia", "Swamp white oak", "Sweetgum", "Sycamore maple", "Tulip-poplar", "Turkish hazelnut", "White oak", "Willow oak"), selected = "All")), 
+                            "Southern magnolia", "Swamp white oak", "Sweetgum", "Sycamore maple", "Tulip-poplar", "Turkish hazelnut", "White oak", "Willow oak"), selected = "All"), 
   
+    selectInput("pollutant", "Pollutants", 
+                choices = c("PM2.5" = "pm", "Nitrogen Dioxide (NO2)" = "no2", 
+                            "Nitric Oxide (NO)" = "no", "Black Carbon" = "bc"),
+                selected = "PM 2.5")),  
+    
   mainPanel(
     leafletOutput("mymap",height = 800) 
     # plotOutput("plot")

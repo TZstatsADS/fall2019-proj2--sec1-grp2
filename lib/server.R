@@ -5,20 +5,19 @@ server <- function(input,output, session){
   })
   
   greenLeafIcon <- makeIcon(
-    iconUrl = "https://i.ibb.co/ScMbL4f/tree.png",
+    iconUrl = "./www/tree.png",
     iconWidth = 18, iconHeight = 20,
     iconAnchorX = 22, iconAnchorY = 94
   )
-  
+  # 
   output$mymap <- renderLeaflet({
     df <- data()
-    
     m <- leaflet(data = df_2015) %>%
-      addTiles() 
-      # addMarkers(lng = ~longitude,
-      #            lat = ~latitude, icon = greenLeafIcon)
+      addTiles()
     m
   })
+  
+  
   # output$plot=renderPlot({
   #   hist(faithful$eruptions, probability = TRUE, breaks = as.numeric(input$year),
   #        xlab = "Duration (minutes)", main = "Geyser eruption duration")
@@ -27,6 +26,20 @@ server <- function(input,output, session){
   #   lines(dens, col = "blue")
   # })
   
+  
+  # Function
+  # polution 
+  observeEvent(input$pollutant, {
+    chosen_data <- pollution_data %>%
+      filter(year == input$year) %>%
+      filter(pollutant == input$pollutant)
+    pal <- colorNumeric(palette = colorRampPalette(c("green", "red"))(10),
+                        domain = chosen_data$measure)
+    leafletProxy("mymap", data = chosen_data) %>%
+    addProviderTiles("CartoDB.Positron") %>% # comment --- another style
+    addCircles(lng = chosen_data$long, lat = chosen_data$lat, 
+               color = pal(chosen_data$measure), radius = 2, opacity = 0.1)
+  })
   
   # Function 
   # Tree types 
@@ -345,8 +358,6 @@ server <- function(input,output, session){
     }
   })
   
-    
-
   
   # Function 
   # Change the boroughs 
@@ -371,5 +382,6 @@ server <- function(input,output, session){
     }
   })
   
-
 }
+
+

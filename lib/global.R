@@ -1,7 +1,13 @@
 library(shiny)
 library(leaflet)
 library(dplyr)
+library(ggmap)
+library(sp)
+library(raster)
+library(rgdal)
 
 df_2015 <- readRDS("../data/sample_data_2015.rds")
 df_2005 <- readRDS("../data/sample_data_2005.rds")
 df_1995 <- readRDS("../data/sample_data_1995.rds")
+load("../data/pollution.RData")
+NYC_coord <- c(lon = -74.00597, lat = 40.71278)
