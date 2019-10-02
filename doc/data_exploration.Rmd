@@ -1,125 +1,91 @@
 ---
-title: "process"
-author: "Lingyi"
-date: "9/27/2019"
+title: "data_exploration"
+author: "Tong Dai"
+date: "9/29/2019"
 output: html_document
 ---
-```{r}
-library("Hmisc")
-library("dplyr")
-library("ggplot2")
-library("tidyr")
-library("readr")
-library("DT")
-library("lubridate")
-library("ggmap")
-library("shiny")
-# library("choroplethr")
-# library("choroplethrZip")
-library("devtools")
-library("tidyverse")
-# library("hrbrthemes")
-library("viridis")
-library("plotly")
-# library("d3heatmap")
-library("heatmaply")
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r}
-df_2015 <- read.csv("../data/2015_Street_Tree_Census.csv", stringsAsFactors = F)
-df_2015$latitude <- as.numeric(df_2015$latitude)
-df_2015$longitude <- as.numeric(df_2015$longitude)
-
-df_2005 <- read.csv("../data/2005_Street_Tree_Census.csv", stringsAsFactors = F)
-df_2005$latitude <- as.numeric(df_2005$latitude)
-df_2005$longitude <- as.numeric(df_2005$longitude)
-
-df_1995 <- read.csv("../data/1995_Street_Tree_Census.csv", stringsAsFactors = F)
-df_1995$latitude <- as.numeric(df_1995$Latitude)
-df_1995$longitude <- as.numeric(df_1995$Longitude)
-
-```
+```{r load packages, message=FALSE, warning=FALSE,echo=FALSE}
+packages.used=c("dplyr","ggplot2","tidyr","readr","DT","lubridate","ggmap","choroplethrZip","devtools","shiny","choroplethr","devtools","tidyverse","hrbrthemes","viridis","plotly","d3heatmap","heatmaply")
 
 
-Clean the tree Types 
-```{r}
-df_2015$spc_common <- capitalize(df_2015$spc_common)
-```
+if (!require("choroplethrZip")) 
+  devtools::install_github('arilamstein/choroplethrZip@v1.5.0')
 
 
-
-```{r}
-saveRDS(df_2015[c(1:1000),], "../data/sample_data_2015.rds")
-saveRDS(df_2005[c(1:1000),], "../data/sample_data_2005.rds")
-saveRDS(df_1995[c(1:1000),], "../data/sample_data_1995.rds")
-```
-
-```{r}
-saveRDS(df_2015, "../data/data_2015.rds")
-saveRDS(df_2005, "../data/data_2005.rds")
-saveRDS(df_1995, "../data/data_1995.rds")
-```
-
-# Tree Types 
-## selections 
-```{r}
-spc_common_vector <- unique(df_2015$spc_common)
-spc_common_vector <- sort(spc_common_vector)
-
-simpleCap <- function(x) {
-  s <- strsplit(x, " ")[[1]]
-  paste(toupper(substring(s, 1,1)), substring(s, 2),
-      sep="", collapse=" ")
+# check packages that need to be installed.
+packages.needed=setdiff(packages.used, 
+                        intersect(installed.packages()[,1], 
+                                  packages.used))
+# install additional packages
+if(length(packages.needed)>0){
+  install.packages(packages.needed, dependencies = TRUE)
 }
-
-
-spc_common_vector <- sapply(spc_common_vector, simpleCap)
+# load packages
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(readr)
+library(DT)
+library(lubridate)
+library(ggmap)
+library(shiny)
+library(choroplethr)
+library(choroplethrZip)
+library(devtools)
+library(tidyverse)
+library(hrbrthemes)
+library(viridis)
+library(plotly)
+library(d3heatmap)
+library(heatmaply)
 ```
 
-```{r}
-spc_common_vector
-```
+
+
+#### Read Data
 
 ```{r}
-unique(df_2015$spc_common)
-```
+setwd("~/Dropbox/Courses/Columbia/Applied Data Science/fall2019-proj2--sec1-grp2/data")
 
+df_2015 <- read.csv("../data/2015_Street_Tree_Census_Tree_Data.csv", stringsAsFactors = F)
 
-```{r}
-unique(df_2015[1000,]$spc_common)
-```
-
-
-----
-
-```{r}
-df_2015 <- readRDS("../data/data_2015.rds")
-```
-
-```{r}
 selected_cols <- c('tree_id','tree_dbh','status','health','spc_common','address','postcode','zip_city','borough','state','latitude','longitude')
+
 processed_df <- df_2015[,selected_cols]
+
 processed_df$full_address <- mutate(processed_df, full_address = paste(address, zip_city, state, postcode, sep = ', '))
+
 ```
 
 
+#### distribution of tree by areas
 
 ```{r}
+
+# distribution of tree by areas
 processed_df %>% 
   group_by(borough)%>% 
   summarise(avg_dbh = mean(tree_dbh, na.rm = TRUE))%>%
   arrange(avg_dbh) %>%
   ggplot(., aes(x= reorder(borough, avg_dbh), y=avg_dbh)) +
-  geom_bar(stat='identity') + 
+  geom_bar(stat='identity', fill="#1CCCC6") + 
   ylab("Avg of Tree Diameter Measured") + xlab ("") + 
-  ggtitle("Largest tree size by region") + 
+  ggtitle("largest tree size by region") + 
   theme_minimal() + 
   scale_x_discrete(labels = function(labels) {
     sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
   })
+
 ```
 
+
+#### tree health status across regions
 
 ```{r}
 processed_df%>% 
@@ -127,15 +93,18 @@ processed_df%>%
   summarise(rate = n()/nrow(processed_df))%>%
   arrange(rate)%>%
   ggplot(., aes(x= reorder(borough, rate), y=rate)) +
-  geom_bar(stat='identity') + 
+  geom_bar(stat='identity', fill="#1CCCC6") + 
   ylab("trees count by regions") + xlab ("") + 
   ggtitle("Which regions has most trees") + 
   theme_minimal() + 
   scale_x_discrete(labels = function(labels) {
     sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
   })
+
 ```
 
+
+#### tree count by health status across boro
 
 ```{r}
 processed_df %>% 
@@ -146,6 +115,8 @@ processed_df %>%
   stat_summary(fun.y=mean, geom="bar",position=position_dodge(1))
 ```
 
+
+#### health tree by narrowed areas
 ```{r}
 processed_df[processed_df$status == 'Alive',]%>% 
   group_by(spc_common)%>% 
@@ -163,8 +134,7 @@ processed_df[processed_df$status == 'Alive',]%>%
   coord_flip()
 ```
 
-
-
+#### health condition for trees
 
 ```{r}
 processed_df_health <- processed_df[processed_df$health != "",]
@@ -181,10 +151,15 @@ processed_df_health%>%
   })
 ```
 
+```{r}
 
+str(processed_df)
+
+```
 
 
 ```{r}
+
 p <- heatmaply(processed_df[,c('zip_city','health')], 
         dendrogram = "none",
         xlab = "", ylab = "", 
@@ -205,9 +180,7 @@ p <- heatmaply(processed_df[,c('zip_city','health')],
 ```
 
 
-```{r}
-processed_df[,c('zip_city','health')]
-```
+
 
 
 
