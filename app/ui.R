@@ -24,7 +24,7 @@ ui <- fluidPage(
           
           helpText("A-Z different tree types"),
           selectInput("select_treetype", "Tree types", 
-                      choices = c("All", "American elm", "American linden", "Amur maple", "Ash", "Atlantic white cedar", "Black cherry", "Black oak", 
+                      choices = c("All", "None", "American elm", "American linden", "Amur maple", "Ash", "Atlantic white cedar", "Black cherry", "Black oak", 
                                   "Callery pear", "Chinese fringetree", "Crab apple", "Crepe myrtle", "Douglas-fir", "Eastern redcedar", "Ginkgo", "Hedge maple", 
                                   "Honeylocust", "Japanese zelkova", "Kentucky yellowwood", "London planetree", "Mulberry", "Northern red oak", "Norway maple", "Ohio buckeye", 
                                   "Pignut hickory", "Pin oak", "Red maple", "Sawtooth oak", "Scarlet oak", "Silver linden", "Silver maple", "Sophora", 
@@ -39,6 +39,11 @@ ui <- fluidPage(
                     choices = c("PM2.5" = "pm", "Nitrogen Dioxide (NO2)" = "no2", 
                                 "Nitric Oxide (NO)" = "no", "Black Carbon" = "bc"),
                     selected = "PM 2.5")),  
+
+      tabPanel( "Neighbourhood",
+                selectInput("neighbour", "Neighbourhood",
+                            choices = c("Enable", "Disable"),
+                            selected = "Disable")),
         # selectInput("n_breaks", label = "Number of bins:",
         #             choices = c(10, 20, 35, 50), selected = 20),
         # 

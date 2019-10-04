@@ -98,18 +98,46 @@ server <- function(input,output, session){
   
   # Function
   # polution 
-  observeEvent(input$pollutant, {
-    chosen_data <- pollution_data %>%
-      filter(year == input$year) %>%
-      filter(pollutant == input$pollutant)
-    pal <- colorNumeric(palette = colorRampPalette(c("green", "red"))(10),
-                        domain = chosen_data$measure)
-    leafletProxy("mymap", data = chosen_data) %>%
-    addProviderTiles("CartoDB.Positron") %>% # comment --- another style
-    addCircles(lng = chosen_data$long, lat = chosen_data$lat, 
-               color = pal(chosen_data$measure), radius = 2, opacity = 0.1)
-  })
+  # observeEvent(input$pollutant, {
+  #   chosen_data <- pollution_data %>%
+  #     filter(year == input$year) %>%
+  #     filter(pollutant == input$pollutant)
+  #   pal <- colorNumeric(palette = colorRampPalette(c("green", "red"))(10),
+  #                       domain = chosen_data$measure)
+  #   leafletProxy("mymap", data = chosen_data) %>%
+  #   addProviderTiles("CartoDB.Positron") %>% # comment --- another style
+  #   addCircles(lng = chosen_data$long, lat = chosen_data$lat, 
+  #              color = pal(chosen_data$measure), radius = 2, opacity = 0.1)
+  # })
   
+  
+  observeEvent(input$neighbour, {
+    if(input$neighbour == "Enable"){
+      tree_count <- df_2015 %>%
+        group_by(nta, .drop = F) %>%
+        tally()
+      combined <- geo_join(nbhood, tree_count, by_sp = "ntacode", by_df = "nta")
+      quantile(tree_count$n)
+      pal <- colorBin(c("gray", colorRampPalette(c("lightgreen", "darkgreen"))(5)), 
+                      bins = c(0, 1, seq(10, 50, by = 10)))
+      
+      leafletProxy("mymap", data = combined) %>%
+        addProviderTiles("CartoDB.Positron") %>%
+        setView(lat = NYC_coord["lat"], lng = NYC_coord["lon"], zoom = 10) %>%
+        addPolygons(fillColor = ~pal(n), color = "black", weight = 1, fillOpacity = 0.8) %>%
+        addLegend(pal = pal, values = c(0, 1, seq(10, 50, by = 10)))
+      a <- labelFormat(prefix = "", suffix = "", between = " &ndash; ",
+                       digits = 3, big.mark = ",", transform = identity)
+      
+    }
+    else if(input$select_treetype == "Disable"){
+      filtered <- df_2015%>% filter(spc_common == input$select_treetype)
+      leafletProxy("mymap", data = filtered) %>%
+        clearMarkers() %>%
+        addMarkers(lng = filtered$longitude,
+                   lat = filtered$latitude, icon = greenLeafIcon)
+    }
+    })
   # Function 
   # Tree types 
   observeEvent(input$select_treetype, {
@@ -120,6 +148,14 @@ server <- function(input,output, session){
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
                  lat = filtered$latitude, icon = greenLeafIcon)
+    }
+    else if(input$select_treetype == "None")
+    {
+      filtered <- df_2015%>% filter(spc_common == input$select_treetype)
+      leafletProxy("mymap", data = filtered) %>%
+        clearMarkers() %>%
+        addMarkers(lng = filtered$longitude,
+                   lat = filtered$latitude, icon = greenLeafIcon)
     }
     else if(input$select_treetype == "American elm")
     {
