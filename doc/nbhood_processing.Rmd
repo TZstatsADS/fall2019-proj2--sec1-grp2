@@ -16,37 +16,86 @@ library(RColorBrewer)
 library(dplyr)
 library(grDevices)
 library(leaflet)
+library(shiny)
+library(rgeos)
 ```
 
 ```{r}
 nbhood <- readShapePoly("../data/nbhood/geo_export_63264cca-db33-43e7-ac15-9019c83788c0.shp")
-tree <- readRDS("../data/sample_data_2015.rds")
+#tree <- readRDS("../data/sample_data_2015.rds")
+tree <- readRDS("../data/data_2015.rds")
 tree$nta <- factor(tree$nta, levels = nbhood@data$ntacode)
 tree_count <- tree %>%
   group_by(nta, .drop = F) %>%
   tally()
+tree_count$tree_per_km2 <- tree_count$n / nbhood@data$shape_area * 10^6
 combined <- geo_join(nbhood, tree_count, by_sp = "ntacode", by_df = "nta")
-
 ```
 
 ```{r}
 NYC_coord <- c(lon = -74.00597, lat = 40.71278)
 
-quantile(tree_count$n)
+Round <- function(x, type = c("round", "ceiling", "floor")){
+  i <- floor(log10(x))
+  if(type == "round")
+    output <- round(x/10^i * 2) / 2 * 10^i
+  else if(type == "ceiling")
+    output <- ceiling(x/10^i * 2) / 2 * 10^i
+  else
+    output <- floor(x/10^i * 2) / 2 * 10^i
+  return(output)
+}
 
-pal <- colorBin(c("gray", colorRampPalette(c("lightgreen", "darkgreen"))(5)), 
-                bins = c(0, 1, seq(10, 50, by = 10)))
+set_bins <- function(count, n_bins){
+  n <- n_bins + 1
+  q <- quantile(count, probs = seq(0, 1, length.out = n))
+  bins <- c(0, 1, Round(q[2:(n-1)], "round"), Round(q[n], "ceiling"))
+  return(bins)
+}
+bins <- set_bins(tree_count$n, 4)
 
-leaflet(combined) %>%
+set_pal <- function(bins){
+  pal <- colorBin(c("gray", colorRampPalette(c("lightgreen", "darkgreen"))(length(bins) - 2)), 
+                  bins = bins)
+  return(pal)
+}
+pal <- set_pal(bins)
+
+set_labels <- function(bins){
+  legend_labels <- c("0", paste("1-", bins[3], sep = ""))
+  for(i in 3:(length(bins)-1)){
+    next_level <- paste(bins[i]+1, "-", bins[i+1], sep = "")
+    legend_labels <- c(legend_labels, next_level)
+  }
+  return(legend_labels)
+}
+legend_labels <- set_labels(bins)
+
+popup <- paste("<strong>Neighborhood: </strong>", combined@data$ntaname,
+               "<br><strong>Counts: </strong>", combined@data$n)
+
+p1 <- leaflet( 
+              options = leafletOptions(minZoom = 9)) %>%
   addProviderTiles("CartoDB.Positron") %>%
   setView(lat = NYC_coord["lat"], lng = NYC_coord["lon"], zoom = 10) %>%
-  addPolygons(fillColor = ~pal(n), color = "black", weight = 1, fillOpacity = 0.8) %>%
-  addLegend(pal = pal, values = c(0, 1, seq(10, 50, by = 10)))
+  #addScaleBar("topleft") %>%
+  addPolygons(data = combined, fillColor = ~pal(combined@data$n), color = "black", weight = 1, 
+              fillOpacity = 0.8, popup = popup) %>%
+  addLegend("topright",
+            pal = pal, values = bins, opacity = 0.8, 
+            labFormat = function(type, cuts, p) paste(legend_labels),
+            title = "Tree Count")
 
-a <- labelFormat(prefix = "", suffix = "", between = " &ndash; ",
-  digits = 3, big.mark = ",", transform = identity)
-
-
+p1
+#p1 %>%
+ # flyTo(lng = -73.93057, lat = 40.69451, zoom = 12)
 ```
 
+```{r}
+leaflet(options = leafletOptions(minZoom = 10)) %>%
+            addProviderTiles("CartoDB.Positron") %>%
+            setView(lat = NYC_coord["lat"], lng = NYC_coord["lon"], zoom = 10) %>%
+            addPolygons(data = combined, color = "black", weight = 1, 
+                        fillOpacity = 0)
+```
 
