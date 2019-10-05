@@ -7,12 +7,12 @@ ui <- fluidPage(
         tabPanel( "Trees", 
           helpText("Choose tree information in different years"),
           selectInput("year", label = "Year:",
-                      choices = c(2015, 2005, 1995)),
+                      choices = c("2015", "2005", "1995")),
         
-          sliderInput("slider1", h5("Year"),
-                      min = 1995, max = 2015, value = 1995,
-                      step = 10, animate = TRUE,
-                      pre = 'Year'),
+          # sliderInput("year", h5("Year"),
+          #             min = 1995, max = 2015, value = 1995,
+          #             step = 10, animate = TRUE,
+          #             pre = 'Year'),
           
           
           # sliderInput("bw_adjust", label = "Bandwidth adjustment:",
@@ -21,6 +21,10 @@ ui <- fluidPage(
           selectInput("select_borough", "Boroughs", 
                       choices = c("All", "Manhattan", "Brooklyn", "Queens",
                                   "Staten Island", "The Bronx"), selected = "All"), 
+          
+          selectInput("borough", "Boroughs trees", 
+                      choices = c("All", "Manhattan", "Brooklyn", "Queens",
+                                  "Staten Island", "Bronx"), selected = "All"), 
           
           helpText("A-Z different tree types"),
           selectInput("select_treetype", "Tree types", 
@@ -43,7 +47,14 @@ ui <- fluidPage(
       tabPanel( "Neighbourhood",
                 selectInput("neighbour", "Neighbourhood",
                             choices = c("Enable", "Disable"),
-                            selected = "Disable")),
+                            selected = "Disable"),
+                
+                selectInput("count", "Measure", 
+                            choices = c("Total number of trees" = "n",
+                                        "Number of trees per KM2" = "density"),
+                            selected = "Total number of trees")),
+      
+
         # selectInput("n_breaks", label = "Number of bins:",
         #             choices = c(10, 20, 35, 50), selected = 20),
         # 

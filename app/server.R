@@ -1,21 +1,7 @@
 server <- function(input,output, session){
-  
-  data <- reactive({
-    x <- df
-  })
-  
-  
-  my_subset_data <- reactive({        
-    
-    # Here check if the column names correspond to the dataset
-    if(any(input$xvar %in% names(dataSource())) & any(input$yvar %in% names(dataSource())))
-    {
-      df <- subset(dataSource(), select = c(input$xvar, input$yvar))
-      names(df) <- c("x","y")
-      return(df)
-    }
-  })
-  
+
+ dataSource <- reactive({switch(input$year, "1995" = df_1995, "2005" = df_2005, "2015" = df_2015)})
+
   
   greenLeafIcon <- makeIcon(
     iconUrl = "./www/tree.png",
@@ -25,7 +11,7 @@ server <- function(input,output, session){
   # 
   output$mymap <- renderLeaflet({
     df <- data()
-    m <- leaflet(data = df_2015) %>%
+    m <- leaflet(data = dataSource()) %>%
       addTiles()
     m
   })
@@ -126,7 +112,7 @@ server <- function(input,output, session){
   
   observeEvent(input$neighbour, {
     if(input$neighbour == "Enable"){
-      tree_count <- df_2015 %>%
+      tree_count <- dataSource() %>%
         group_by(nta, .drop = F) %>%
         tally()
       combined <- geo_join(nbhood, tree_count, by_sp = "ntacode", by_df = "nta")
@@ -146,7 +132,7 @@ server <- function(input,output, session){
       
     }
     else if(input$neighbour == "Disable"){
-      filtered <- df_2015%>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource()%>% filter(spc_common == input$select_treetype)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         clearControls() %>%
@@ -164,21 +150,26 @@ server <- function(input,output, session){
   })
   
   
-  
   # Function 
   # Tree types 
   observeEvent(input$select_treetype, {
+
     if(input$select_treetype == "All")
     {
-      filtered <- df_2015
+    
+      popup <- paste("<strong>Type: </strong>", tree$spc_common,
+                     "<br><strong>Status: </strong>", tree$status,
+                     "<br><strong>Address: </strong>", tree$address)
+      filtered <- dataSource()
       leafletProxy("mymap", data = filtered) %>%
+        addProviderTiles("CartoDB.Positron") %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                 lat = filtered$latitude, icon = greenLeafIcon)
+                 lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "None")
     {
-      filtered <- df_2015%>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
@@ -186,307 +177,422 @@ server <- function(input,output, session){
     }
     else if(input$select_treetype == "American elm")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "American linden")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Amur maple")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Ash")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Atlantic white cedar")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Black cherry")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Black oak")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Callery pear")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Chinese fringetree")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Crab apple")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Crepe myrtle")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Douglas-fir")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Eastern redcedar")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Ginkgo")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Honeylocust")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Japanese zelkova")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Kentucky yellowwood")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "London planetree")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Mulberry")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Northern red oak")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Norway maple")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Ohio buckeye")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Pignut hickory")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Pin oak")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Red maple")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Sawtooth oak")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Scarlet oak")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Silver linden")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Silver maple")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Sophora")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Southern magnolia")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Swamp white oak")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Sweetgum")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Sycamore maple")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Tulip-poplar")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Turkish hazelnut")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "White oak")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
     else if(input$select_treetype == "Willow oak")
     {
-      filtered <- df_2015 %>% filter(spc_common == input$select_treetype)
+      filtered <- dataSource() %>% filter(spc_common == input$select_treetype)
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
         addMarkers(lng = filtered$longitude,
-                   lat = filtered$latitude, icon = greenLeafIcon)
+                   lat = filtered$latitude, icon = greenLeafIcon, popup = popup)
     }
   })
   
@@ -514,8 +620,147 @@ server <- function(input,output, session){
     }
   })
   
+  
+  observeEvent(input$borough,{
+    b <- input$borough
+    
+    if(b == "All"){
+      popup <- paste("<strong>Type: </strong>", tree$spc_common,
+                     "<br><strong>Status: </strong>", tree$status,
+                     "<br><strong>Address: </strong>", tree$address)
+      
+      leafletProxy("mymap") %>%
+        clearMarkers() %>%
+        clearShapes() %>%
+        flyTo(lat = NYC_coord["lat"], lng = NYC_coord["lon"], zoom = 10) %>%
+        addPolygons(data = combined, color = "black", weight = 1, 
+                    fillOpacity = 0) %>%
+        addMarkers(lng = dataSource()$longitude, lat = dataSource()$latitude, popup = popup, icon = greenLeafIcon)
+      
+    }
+    
+    else{
+      filtered <- dataSource() %>%
+        filter(borough == b)
+      
+      popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+                     "<br><strong>Status: </strong>", filtered$status,
+                     "<br><strong>Address: </strong>", filtered$address)
+      
+      centroid <- gCentroid(combined[combined@data$boro_name == b, ])
+      
+      leafletProxy("mymap") %>%
+        clearMarkers() %>%
+        clearShapes() %>%
+        flyTo(lng = centroid@coords[1], lat = centroid@coords[2], zoom = 11) %>%
+        addPolygons(data = combined, color = "black", weight = 1, 
+                    fillOpacity = 0) %>%
+        addMarkers(lng = filtered$longitude, lat = filtered$latitude,
+                   popup = popup, icon = greenLeafIcon) %>%
+        addPolygons(data = combined[combined@data$boro_name == b, ],
+                    color = "lightblue", weight = 3,
+                    fillColor = "lightgreen", fillOpacity = 0.2)
+    }
+    
+  })
+  
+  
+  observeEvent(input$count, {
+    if(input$count == "n"){
+      bins <- set_bins(combined@data$n, 4)
+      pal <- set_pal(bins)
+      legend_labels <- set_labels(bins)
+      p1 <- leafletProxy("mymap")  %>%
+        clearMarkers() %>%
+        clearControls() %>%
+        clearShapes() %>%
+        addProviderTiles("CartoDB.Positron") %>%
+        setView(lat = NYC_coord["lat"], lng = NYC_coord["lon"], zoom = 10) %>%
+        
+        ###################### Polygons
+        
+        addPolygons(fillColor = ~pal(n), color = "black", weight = 1, 
+                    fillOpacity = 0.8, popup = popup[[1]][[1]], 
+                    data = data_by_borough[[1]],
+                    group = "Manhattan") %>%
+        addPolygons(fillColor = ~pal(n), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[2]][[1]],
+                    data = data_by_borough[[2]],
+                    group = "Brooklyn") %>%
+        addPolygons(fillColor = ~pal(n), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[3]][[1]],
+                    data = data_by_borough[[3]],
+                    group = "Queens") %>%
+        addPolygons(fillColor = ~pal(n), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[4]][[1]],
+                    data = data_by_borough[[4]],
+                    group = "Staten Island") %>%
+        addPolygons(fillColor = ~pal(n), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[5]][[1]],
+                    data = data_by_borough[[5]],
+                    group = "Bronx") %>%
+        
+        #########################
+      
+      addLegend("topleft",
+                pal = pal, values = bins, opacity = 0.8, 
+                labFormat = function(type, cuts, p) paste(legend_labels),
+                title = legend_title[1], group = "legend") %>%
+        
+        addLayersControl(overlayGroups = c("Manhattan", "Brooklyn", "Queens",
+                                           "Staten Island", "Bronx"),
+                         options = layersControlOptions(collapsed = F))
+      
+    }
+
+    else if(input$count == "density"){
+      bins <- seq(min(combined@data$tree_per_km2, na.rm = T), 
+                  max(combined@data$tree_per_km2, na.rm = T), length.out = 5)
+      pal <- set_pal(bins)
+      #legend_labels <- set_labels(bins)
+      p1 <- leafletProxy("mymap") %>%
+        addProviderTiles("CartoDB.Positron") %>%
+        clearMarkers() %>%
+        clearControls() %>%
+        clearShapes() %>%
+        setView(lat = NYC_coord["lat"], lng = NYC_coord["lon"], zoom = 10) %>%
+        
+        ###################### Polygons
+        
+        addPolygons(fillColor = ~pal(tree_per_km2), color = "black", weight = 1, 
+                    fillOpacity = 0.8, popup = popup[[1]][[2]], 
+                    data = data_by_borough[[1]],
+                    group = "Manhattan") %>%
+        addPolygons(fillColor = ~pal(tree_per_km2), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[2]][[2]],
+                    data = data_by_borough[[2]],
+                    group = "Brooklyn") %>%
+        addPolygons(fillColor = ~pal(tree_per_km2), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[3]][[2]],
+                    data = data_by_borough[[3]],
+                    group = "Queens") %>%
+        addPolygons(fillColor = ~pal(tree_per_km2), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[4]][[2]],
+                    data = data_by_borough[[4]],
+                    group = "Staten Island") %>%
+        addPolygons(fillColor = ~pal(tree_per_km2), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[5]][[2]],
+                    data = data_by_borough[[5]],
+                    group = "Bronx") %>%
+        #########################
+      
+      addLegend("topleft",
+                pal = pal, values = bins, opacity = 0.8, 
+                labFormat = labelFormat(),
+                title = legend_title[2], group = "legend") %>%
+        
+        addLayersControl(overlayGroups = c("Manhattan", "Brooklyn", "Queens",
+                                           "Staten Island", "Bronx"),
+                         options = layersControlOptions(collapsed = F))
+    }
+  })
 }
   
-  
+
 
 
