@@ -54,7 +54,7 @@ ui <- fluidPage(
                            choices = c("Largest tree size by region", "Which regions has most trees", "Health status across boroughs", "Alive tree by tree type",
                                        "Health condition for trees"), selected = "Largest tree size by region"))
       ), 
-      actionButton("reset", "Reset")), 
+      actionButton("reset", "Clean")), 
 
   mainPanel(
     leafletOutput("mymap",height = 800), 

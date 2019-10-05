@@ -4,6 +4,19 @@ server <- function(input,output, session){
     x <- df
   })
   
+  
+  my_subset_data <- reactive({        
+    
+    # Here check if the column names correspond to the dataset
+    if(any(input$xvar %in% names(dataSource())) & any(input$yvar %in% names(dataSource())))
+    {
+      df <- subset(dataSource(), select = c(input$xvar, input$yvar))
+      names(df) <- c("x","y")
+      return(df)
+    }
+  })
+  
+  
   greenLeafIcon <- makeIcon(
     iconUrl = "./www/tree.png",
     iconWidth = 18, iconHeight = 20,
@@ -123,6 +136,8 @@ server <- function(input,output, session){
       
       leafletProxy("mymap", data = combined) %>%
         addProviderTiles("CartoDB.Positron") %>%
+        clearMarkers() %>%
+        clearControls() %>%
         setView(lat = NYC_coord["lat"], lng = NYC_coord["lon"], zoom = 10) %>%
         addPolygons(fillColor = ~pal(n), color = "black", weight = 1, fillOpacity = 0.8) %>%
         addLegend(pal = pal, values = c(0, 1, seq(10, 50, by = 10)))
@@ -130,14 +145,26 @@ server <- function(input,output, session){
                        digits = 3, big.mark = ",", transform = identity)
       
     }
-    else if(input$select_treetype == "Disable"){
+    else if(input$neighbour == "Disable"){
       filtered <- df_2015%>% filter(spc_common == input$select_treetype)
       leafletProxy("mymap", data = filtered) %>%
         clearMarkers() %>%
+        clearControls() %>%
+        clearShapes() %>%
         addMarkers(lng = filtered$longitude,
                    lat = filtered$latitude, icon = greenLeafIcon)
     }
     })
+  
+  observeEvent(input$reset, {
+    leafletProxy("mymap") %>%
+      clearMarkers() %>%
+      clearControls() %>%
+      clearShapes()
+  })
+  
+  
+  
   # Function 
   # Tree types 
   observeEvent(input$select_treetype, {
