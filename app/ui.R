@@ -17,42 +17,43 @@ ui <- fluidPage(
           
           # sliderInput("bw_adjust", label = "Bandwidth adjustment:",
           #             min = 0.2, max = 2, value = 1, step = 0.2),
-          helpText("Choose different boroughs"),
-          selectInput("select_borough", "Boroughs", 
-                      choices = c("All", "Manhattan", "Brooklyn", "Queens",
-                                  "Staten Island", "The Bronx"), selected = "All"), 
+          # helpText("Choose different boroughs"),
+          # selectInput("select_borough", "Boroughs", 
+          #             choices = c("All", "Manhattan", "Brooklyn", "Queens",
+          #                         "Staten Island", "The Bronx"), selected = "All"), 
           
           selectInput("borough", "Boroughs trees", 
-                      choices = c("All", "Manhattan", "Brooklyn", "Queens",
-                                  "Staten Island", "Bronx"), selected = "All"), 
+                      choices = c("Disable", "Manhattan", "Brooklyn", "Queens",
+                                  "Staten Island", "Bronx"), selected = "Disable"), 
           
           helpText("A-Z different tree types"),
           selectInput("select_treetype", "Tree types", 
-                      choices = c("All", "None", "American elm", "American linden", "Amur maple", "Ash", "Atlantic white cedar", "Black cherry", "Black oak", 
+                      choices = c("None", "All", "American elm", "American linden", "Amur maple", "Ash", "Atlantic white cedar", "Black cherry", "Black oak", 
                                   "Callery pear", "Chinese fringetree", "Crab apple", "Crepe myrtle", "Douglas-fir", "Eastern redcedar", "Ginkgo", "Hedge maple", 
                                   "Honeylocust", "Japanese zelkova", "Kentucky yellowwood", "London planetree", "Mulberry", "Northern red oak", "Norway maple", "Ohio buckeye", 
                                   "Pignut hickory", "Pin oak", "Red maple", "Sawtooth oak", "Scarlet oak", "Silver linden", "Silver maple", "Sophora", 
-                                  "Southern magnolia", "Swamp white oak", "Sweetgum", "Sycamore maple", "Tulip-poplar", "Turkish hazelnut", "White oak", "Willow oak"), selected = "All")), 
+                                  "Southern magnolia", "Swamp white oak", "Sweetgum", "Sycamore maple", "Tulip-poplar", "Turkish hazelnut", "White oak", "Willow oak"), selected = "None")), 
           # h2("Trees"),
           # p("Trees Trees Trees"),
           # 
           # img(src="trees_selector.png", height = 271, width = 500),
         
       tabPanel( "Pollutants", 
+                
         selectInput("pollutant", "Pollutants", 
-                    choices = c("PM2.5" = "pm", "Nitrogen Dioxide (NO2)" = "no2", 
+                    choices = c("None" = "None", "PM2.5" = "pm", "Nitrogen Dioxide (NO2)" = "no2", 
                                 "Nitric Oxide (NO)" = "no", "Black Carbon" = "bc"),
-                    selected = "PM 2.5")),  
+                    selected = "None")),  
 
       tabPanel( "Neighbourhood",
-                selectInput("neighbour", "Neighbourhood",
-                            choices = c("Enable", "Disable"),
-                            selected = "Disable"),
+                # selectInput("neighbour", "Neighbourhood",
+                #             choices = c("Enable", "Disable"),
+                #             selected = "Disable"),
                 
                 selectInput("count", "Measure", 
-                            choices = c("Total number of trees" = "n",
+                            choices = c("Disable", "Total number of trees" = "n",
                                         "Number of trees per KM2" = "density"),
-                            selected = "Total number of trees")),
+                            selected = "Disable")),
       
 
         # selectInput("n_breaks", label = "Number of bins:",
@@ -65,6 +66,10 @@ ui <- fluidPage(
                            choices = c("Largest tree size by region", "Which regions has most trees", "Health status across boroughs", "Alive tree by tree type",
                                        "Health condition for trees"), selected = "Largest tree size by region"))
       ), 
+      helpText("Choose different boroughs"),
+      selectInput("select_borough", "Zoom in boroughs", 
+                  choices = c("All", "Manhattan", "Brooklyn", "Queens",
+                              "Staten Island", "The Bronx"), selected = "All"), 
       actionButton("reset", "Clean")), 
 
   mainPanel(
@@ -73,4 +78,7 @@ ui <- fluidPage(
     # plotOutput("plot")
   )
 )
+
+
+
 
