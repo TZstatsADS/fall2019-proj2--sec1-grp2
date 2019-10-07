@@ -49,4 +49,10 @@ a <- labelFormat(prefix = "", suffix = "", between = " &ndash; ",
 
 ```
 
+```{r}
+leaflet(data = combined) %>%
+      addProviderTiles("CartoDB.Positron")  %>%
+      addPolygons(data = combined, color = "black", weight = 1, 
+                  fillOpacity = 0)
+```
 

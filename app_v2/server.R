@@ -1,0 +1,342 @@
+server <- function(input,output, session){
+
+  dataSource <- reactive({switch(input$year, "1995" = df_1995, "2005" = df_2005, "2015" = df_2015)})
+  source("global.R")
+  
+  greenLeafIcon <- makeIcon(
+    iconUrl = "./www/tree.png",
+    iconWidth = 18, iconHeight = 20,
+    iconAnchorX = 0, iconAnchorY = 0
+  )
+  
+  output$mymap <- renderLeaflet({
+    df <- data()
+    leaflet(options = leafletOptions(minZoom = 10)) %>%
+      addProviderTiles("CartoDB.Positron")  %>%
+      addPolygons(data = combined, color = "black", weight = 1, 
+                  fillOpacity = 0)
+  })
+  
+  
+  output$plot=renderPlot({
+    if(input$select_statistical == 'Largest tree size by region'){
+      processed_df %>%
+      group_by(borough)%>%
+      summarise(avg_dbh = mean(tree_dbh, na.rm = TRUE))%>%
+      arrange(avg_dbh) %>%
+      ggplot(., aes(x= reorder(borough, avg_dbh), y=avg_dbh)) +
+      geom_bar(stat='identity', fill="chartreuse4") +
+      ylab("Avg of Tree Diameter Measured") + xlab ("Boroughs") +
+      ggtitle("Largest tree size by region") +
+      theme_minimal() +
+      theme(text = element_text(size=15), plot.title = element_text(size=20, hjust = 0.5))  + 
+      scale_x_discrete(labels = function(labels) {
+        sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
+      })
+    }
+    else if(input$select_statistical == 'Which regions has most trees'){
+      processed_df%>% 
+      group_by(borough)%>% 
+      summarise(rate = n()/nrow(processed_df))%>%
+      arrange(rate)%>%
+      ggplot(., aes(x= reorder(borough, rate), y=rate)) +
+      geom_bar(stat='identity', fill="chartreuse4") + 
+      ylab("trees count by regions") + xlab ("Boroughs") + 
+      ggtitle("Which regions has most trees") + 
+      theme_minimal() + 
+      theme(text = element_text(size=15), plot.title = element_text(size=20, hjust = 0.5))  +   
+      scale_x_discrete(labels = function(labels) {
+        sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
+      })
+    }
+    else if(input$select_statistical == "Health status across boroughs"){
+      processed_df %>% 
+        group_by(borough,status)%>% 
+        summarise(rate = n()/nrow(processed_df))%>%
+        arrange(borough,status)%>%
+        ggplot(., aes(x= reorder(borough, rate), y=rate, fill = factor(status))) +
+        stat_summary(fun.y=mean, geom="bar",position=position_dodge(1)) + theme_minimal()  + 
+        theme(text = element_text(size=15), plot.title = element_text(size=20, hjust = 0.5))
+    }
+    else if(input$select_statistical == "Alive tree by tree type"){
+      processed_df[processed_df$status == 'Alive',]%>% 
+        group_by(spc_common)%>% 
+        summarise(rate = n()/nrow(processed_df))%>%
+        arrange(desc(rate))%>%
+        slice(1:10) %>%
+        ggplot(., aes(x= reorder(spc_common, rate), y=rate)) +
+        geom_bar(stat='identity', fill="chartreuse4") + 
+        ylab("Tree count percentage") + xlab ("Boroughs") + 
+        ggtitle("Alive tree by tree type") + 
+        theme_minimal() + 
+        theme(text = element_text(size=15), plot.title = element_text(size=20, hjust = 0.5)) +
+        scale_x_discrete(labels = function(labels) {
+          sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
+        })+
+        coord_flip()
+    }
+    else if(input$select_statistical == "Health condition for trees"){
+      processed_df_health <- processed_df[processed_df$health != "",]
+      processed_df_health%>%
+        group_by(health)%>%
+        summarise(rate = n()/nrow(processed_df_health))%>%
+        ggplot(., aes(x= reorder(health, rate), y=rate)) +
+        geom_bar(stat='identity', fill="chartreuse4") + 
+        ylab("Tree count percentage") + xlab ("Boroughs") + 
+        ggtitle("Alive tree by tree type") + 
+        theme_minimal() + 
+        theme(text = element_text(size=15), plot.title = element_text(size=20, hjust = 0.5)) + 
+        scale_x_discrete(labels = function(labels) {
+          sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
+        })
+    }
+  })
+  
+  # Function 
+  # Tree types 
+  observeEvent({
+    input$select_treetype 
+    input$borough}, {
+      b <- input$borough
+      
+      if(b == "Disable"){
+        leafletProxy("mymap") %>%
+          clearMarkers() %>%
+          clearControls() %>%
+          removeLayersControl() %>%
+          clearGroup("b_polygon") %>%
+          clearGroup("Manhattan") %>%
+          clearGroup("Brooklyn") %>%
+          clearGroup("Queens") %>%
+          clearGroup("Staten Island") %>%
+          clearGroup("Bronx") %>%
+          flyTo(lng = NYC_coord[1], lat = NYC_coord[2], zoom = 10)
+      }
+      
+      else{
+        centroid <- gCentroid(combined[combined@data$boro_name == b, ])
+        leafletProxy("mymap") %>%
+          clearMarkers() %>%
+          clearControls() %>%
+          removeLayersControl() %>%
+          clearGroup("b_polygon") %>%
+          clearGroup("Manhattan") %>%
+          clearGroup("Brooklyn") %>%
+          clearGroup("Queens") %>%
+          clearGroup("Staten Island") %>%
+          clearGroup("Bronx") %>%
+          flyTo(lng = centroid@coords[1], lat = centroid@coords[2], zoom = 11) %>%
+          addPolygons(data = combined[combined@data$boro_name == b, ],
+                      color = "lightblue", weight = 3,
+                      fillColor = "lightgreen", fillOpacity = 0.2,
+                      group = "b_polygon")
+      }
+      
+      if(input$select_treetype == "None"){
+        leafletProxy("mymap") %>%
+          clearMarkers() %>%
+          clearControls() %>%
+          removeLayersControl() %>%
+          clearGroup("Manhattan") %>%
+          clearGroup("Brooklyn") %>%
+          clearGroup("Queens") %>%
+          clearGroup("Staten Island") %>%
+          clearGroup("Bronx") 
+      }
+    
+      else if(input$select_treetype == "All"){
+        filtered <- dataSource() %>%
+        filter(borough == b)
+        popup <- paste("<strong>Type: </strong>", tree$spc_common,
+                       "<br><strong>Status: </strong>", tree$status,
+                       "<br><strong>Address: </strong>", tree$address)
+        leafletProxy("mymap") %>%
+          clearMarkers() %>%
+          clearControls() %>%
+          removeLayersControl() %>%
+          clearGroup("Manhattan") %>%
+          clearGroup("Brooklyn") %>%
+          clearGroup("Queens") %>%
+          clearGroup("Staten Island") %>%
+          clearGroup("Bronx") %>%
+          addMarkers(lng = filtered$longitude, lat = filtered$latitude,
+                    popup = popup, icon = greenLeafIcon) 
+      }
+    
+      else{
+        filtered <- dataSource() %>%
+          filter(borough == b & spc_common == input$select_treetype)
+        popup <- paste("<strong>Type: </strong>", tree$spc_common,
+                       "<br><strong>Status: </strong>", tree$status,
+                       "<br><strong>Address: </strong>", tree$address)
+        leafletProxy("mymap") %>%
+          clearMarkers() %>%
+          clearControls() %>%
+          removeLayersControl() %>%
+          clearGroup("Manhattan") %>%
+          clearGroup("Brooklyn") %>%
+          clearGroup("Queens") %>%
+          clearGroup("Staten Island") %>%
+          clearGroup("Bronx") %>%
+          addMarkers(lng = filtered$longitude, lat = filtered$latitude,
+                    popup = popup, icon = greenLeafIcon) 
+      }
+    
+  })
+    
+  # Function
+  # Polution
+  observeEvent(input$pollutant, {
+    chosen_data <- pollution_data %>%
+      filter(year == input$year) %>%
+      filter(pollutant == input$pollutant)
+    pal <- colorNumeric(palette = colorRampPalette(c("green", "red"))(10),
+                        domain = chosen_data$measure)
+    leafletProxy("mymap", data = chosen_data) %>%
+      addProviderTiles("CartoDB.Positron") %>% # comment --- another style
+      addCircles(lng = chosen_data$long, lat = chosen_data$lat,
+                 color = pal(chosen_data$measure), radius = 2, opacity = 0.1)
+  })
+
+  # Function 
+  # Measure
+  observeEvent(input$count, {
+    if(input$count == "Disable"){
+      leafletProxy("mymap")
+    #   filtered <- dataSource()%>% filter(spc_common == input$select_treetype)
+    #   leafletProxy("mymap", data = filtered) %>%
+    #     clearMarkers() %>%
+    #     clearControls() %>%
+    #     clearShapes() %>%
+    #     addMarkers(lng = filtered$longitude,
+    #                lat = filtered$latitude, icon = greenLeafIcon)
+    }
+    else if(input$count == "n"){
+      bins <- set_bins(combined@data$n, 4)
+      pal <- set_pal(bins)
+      legend_labels <- set_labels(bins)
+      p1 <- leafletProxy("mymap")  %>%
+        clearMarkers() %>%
+        clearControls() %>%
+        clearShapes() %>%
+        addProviderTiles("CartoDB.Positron") %>%
+        setView(lat = NYC_coord["lat"], lng = NYC_coord["lon"], zoom = 10) %>%
+        
+        ###################### Polygons
+        
+        addPolygons(fillColor = ~pal(n), color = "black", weight = 1, 
+                    fillOpacity = 0.8, popup = popup[[1]][[1]], 
+                    data = data_by_borough[[1]],
+                    group = "Manhattan") %>%
+        addPolygons(fillColor = ~pal(n), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[2]][[1]],
+                    data = data_by_borough[[2]],
+                    group = "Brooklyn") %>%
+        addPolygons(fillColor = ~pal(n), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[3]][[1]],
+                    data = data_by_borough[[3]],
+                    group = "Queens") %>%
+        addPolygons(fillColor = ~pal(n), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[4]][[1]],
+                    data = data_by_borough[[4]],
+                    group = "Staten Island") %>%
+        addPolygons(fillColor = ~pal(n), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[5]][[1]],
+                    data = data_by_borough[[5]],
+                    group = "Bronx") %>%
+        
+        #########################
+      
+        addLegend("topleft",
+                pal = pal, values = bins, opacity = 0.8, 
+                labFormat = function(type, cuts, p) paste(legend_labels),
+                title = legend_title[1], group = "legend") %>%
+        
+        addLayersControl(overlayGroups = c("Manhattan", "Brooklyn", "Queens",
+                                           "Staten Island", "Bronx"),
+                         options = layersControlOptions(collapsed = F))
+      
+    }
+
+    else if(input$count == "density"){
+      bins <- seq(min(combined@data$tree_per_km2, na.rm = T), 
+                  max(combined@data$tree_per_km2, na.rm = T), length.out = 5)
+      pal <- set_pal(bins)
+      #legend_labels <- set_labels(bins)
+      p1 <- leafletProxy("mymap") %>%
+        addProviderTiles("CartoDB.Positron") %>%
+        clearMarkers() %>%
+        clearControls() %>%
+        clearShapes() %>%
+        setView(lat = NYC_coord["lat"], lng = NYC_coord["lon"], zoom = 10) %>%
+        
+        ###################### Polygons
+        
+        addPolygons(fillColor = ~pal(tree_per_km2), color = "black", weight = 1, 
+                    fillOpacity = 0.8, popup = popup[[1]][[2]], 
+                    data = data_by_borough[[1]],
+                    group = "Manhattan") %>%
+        addPolygons(fillColor = ~pal(tree_per_km2), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[2]][[2]],
+                    data = data_by_borough[[2]],
+                    group = "Brooklyn") %>%
+        addPolygons(fillColor = ~pal(tree_per_km2), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[3]][[2]],
+                    data = data_by_borough[[3]],
+                    group = "Queens") %>%
+        addPolygons(fillColor = ~pal(tree_per_km2), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[4]][[2]],
+                    data = data_by_borough[[4]],
+                    group = "Staten Island") %>%
+        addPolygons(fillColor = ~pal(tree_per_km2), color = "black", weight = 1,
+                    fillOpacity = 0.8, popup = popup[[5]][[2]],
+                    data = data_by_borough[[5]],
+                    group = "Bronx") %>%
+        #########################
+      
+      addLegend("topleft",
+                pal = pal, values = bins, opacity = 0.8, 
+                labFormat = labelFormat(),
+                title = legend_title[2], group = "legend") %>%
+        
+        addLayersControl(overlayGroups = c("Manhattan", "Brooklyn", "Queens",
+                                           "Staten Island", "Bronx"),
+                         options = layersControlOptions(collapsed = F))
+    }
+  })
+  
+  # Function 
+  # Clean button 
+  observeEvent(input$reset, {
+    leafletProxy("mymap") %>%
+      clearMarkers() %>%
+      clearControls() %>%
+      removeLayersControl() %>%
+      clearShapes()
+  })
+  
+  # Function 
+  # Change the boroughs 
+  # observeEvent(input$select_borough, {
+  #   if(input$select_borough == 'All'){
+  #     setView(map = leafletProxy("mymap"), lng=NYC_coord[1], lat=NYC_coord[2], zoom=10)
+  #   }
+  #   else if(input$select_borough == 'Manhattan'){
+  #     setView(map = leafletProxy("mymap"), lng=-73.9712, lat=40.7831, zoom=12)
+  #   }
+  #   else if(input$select_borough == 'Queens'){
+  #     setView(map = leafletProxy("mymap"), lng=-73.7949, lat=40.7282, zoom=12)
+  #   }
+  #   else if(input$select_borough == 'Brooklyn'){
+  #     setView(map = leafletProxy("mymap"), lng=-73.9442, lat=40.6782, zoom=12)
+  #   }
+  #   else if(input$select_borough == "Staten Island"){
+  #     setView(map = leafletProxy("mymap"), lng=-74.1502, lat=40.5795, zoom=12)
+  #   }
+  #   else{
+  #     setView(map = leafletProxy("mymap"), lng=-73.8648, lat=40.8448, zoom=12)
+  #   }
+  #})
+  
+}
+  
