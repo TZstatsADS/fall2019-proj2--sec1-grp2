@@ -39,7 +39,6 @@ library(choroplethr)
 library(choroplethrZip)
 library(devtools)
 library(tidyverse)
-library(hrbrthemes)
 library(viridis)
 library(plotly)
 library(d3heatmap)
@@ -53,9 +52,12 @@ library(heatmaply)
 ```{r}
 setwd("~/Dropbox/Courses/Columbia/Applied Data Science/fall2019-proj2--sec1-grp2/data")
 
+
 df_2015 <- read.csv("../data/2015_Street_Tree_Census_Tree_Data.csv", stringsAsFactors = F)
 
-selected_cols <- c('tree_id','tree_dbh','status','health','spc_common','address','postcode','zip_city','borough','state','latitude','longitude')
+
+
+selected_cols <- c('tree_id','tree_dbh','status','health','curb_loc','sidewalk','problems','spc_common','address','postcode','zip_city','borough','state','latitude','longitude')
 
 processed_df <- df_2015[,selected_cols]
 
@@ -178,6 +180,157 @@ p <- heatmaply(processed_df[,c('zip_city','health')],
         heatmap_layers = theme(axis.line=element_blank())
         )
 ```
+
+
+
+
+#### newly added analysis 20191007
+
+```{r}
+processed_df[(processed_df$sidewalk == "Damage") & (processed_df$problems!="None"),] %>% 
+  group_by(problems)%>% 
+  summarise(rate = n())%>%
+  arrange(desc(rate)) %>%
+  slice(1:10) %>%
+  ggplot(., aes(x= reorder(problems, rate), y=rate)) +
+  geom_bar(stat='identity', fill="#1CCCC6") + 
+  ylab("Tree Count") + xlab ("") + 
+  ggtitle("Top 10 Reasons to Cause Sidewalk Damage") + 
+  coord_flip()
+```
+
+
+
+```{r}
+
+str(processed_df)
+
+processed_df[(processed_df$status == "Alive") & (processed_df$sidewalk != ""),] %>% 
+  group_by(sidewalk)%>% 
+  summarise(share = n())%>%
+  ggplot(., aes(x= "", y=share, fill = sidewalk)) +
+  
+  geom_bar(width = 1, size = 1, color = "white", stat = "identity") +
+    coord_polar("y") +
+    geom_text(aes(label = paste0(round(share), "")), 
+              position = position_stack(vjust = 0.5)) +
+    labs(x = NULL, y = NULL, fill = NULL, 
+         title = "Distribution of Sidewalk Condition") +
+    guides(fill = guide_legend(reverse = TRUE)) +
+    scale_fill_manual(values = c("#ffd700", "#bcbcbc", "#ffa500", "#254290")) +
+    theme_classic() +
+    theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))
+
+```
+
+
+
+```{r}
+processed_df[(processed_df$status == "Alive") & (processed_df$sidewalk != "Damage"),] %>% 
+  group_by(zip_city)%>% 
+  summarise(share = n())%>%
+  ggplot(., aes(x= "", y=share, fill = zip_city)) +
+  geom_bar(width = 0.2, size = 0.2, color = "white", stat = "identity") +
+    coord_polar("y") +
+    geom_text(aes(label = ""), 
+              position = position_stack(vjust = 0.5)) +
+    labs(x = NULL, y = NULL, fill = NULL, 
+         title = "Alive Trees Damaged Sidewalk By Boro") +
+    guides(fill = guide_legend(reverse = TRUE)) +
+    theme_classic() +
+    theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))
+
+```
+
+
+
+```{r}
+processed_df[(processed_df$status == "Alive") & (processed_df$sidewalk != "Damage"),] %>% 
+  group_by(borough)%>% 
+  summarise(share = n())%>%
+  ggplot(., aes(x= "", y=share, fill = borough)) +
+  geom_bar(width = 0.2, size = 0.2, color = "white", stat = "identity") +
+    coord_polar("y") +
+    geom_text(aes(label = ""), 
+              position = position_stack(vjust = 0.5)) +
+    labs(x = NULL, y = NULL, fill = NULL, 
+         title = "Alive Tree Damaged Sidewalk By Boro") +
+    guides(fill = guide_legend(reverse = TRUE)) +
+    theme_classic() +
+    theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))
+
+```
+
+
+
+
+
+```{r}
+str(processed_df)
+
+processed_df[(processed_df$status == "Alive") & (processed_df$sidewalk == "Damage"),] %>% 
+  group_by(borough,spc_common)%>% 
+  summarise(share = n())%>%
+  arrange(desc(share)) %>%
+  slice(1:30) %>%
+  ggplot(., aes(x= "", y=share, fill = spc_common)) +
+  geom_bar(width = 0.2, size = 0.2, color = "white", stat = "identity") +
+    coord_polar("y") +
+    geom_text(aes(label = ""), 
+              position = position_stack(vjust = 0.5)) +
+    labs(x = NULL, y = NULL, fill = NULL, 
+         title = "Alive Tree Type has most Damaged to sidewalk by Boro") +
+    guides(fill = guide_legend(reverse = TRUE)) +
+    theme_classic() +
+    theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))+
+  facet_wrap(~borough)
+
+```
+
+
+```{r}
+str(processed_df)
+
+processed_df[(processed_df$status == "Alive") & (processed_df$health != ""),] %>% 
+  group_by(borough,health)%>% 
+  summarise(share = n())%>%
+  arrange(desc(share)) %>%
+  ggplot(., aes(x= "", y=share, fill = health)) +
+  geom_bar(width = 0.2, size = 0.2, color = "white", stat = "identity") +
+    coord_polar("y") +
+    geom_text(aes(label = ""), 
+              position = position_stack(vjust = 0.5)) +
+    labs(x = NULL, y = NULL, fill = NULL, 
+         title = "Alive Tree health condition by Boro") +
+    guides(fill = guide_legend(reverse = TRUE)) +
+    theme_classic() +
+    theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))+
+  facet_wrap(~borough)
+
+```
+
+
+
+
+
+
+
+
 
 
 
