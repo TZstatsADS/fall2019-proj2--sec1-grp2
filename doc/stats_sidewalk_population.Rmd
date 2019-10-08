@@ -15,7 +15,6 @@ data_2015 <- readRDS("~/Documents/GitHub/fall2019-proj2--sec1-grp2/data/data_201
 data_2005 <- readRDS("~/Documents/GitHub/fall2019-proj2--sec1-grp2/data/data_2005.rds")
 data_1995 <- readRDS("~/Documents/GitHub/fall2019-proj2--sec1-grp2/data/data_1995.rds")
 pop_data <- readRDS("~/Documents/GitHub/fall2019-proj2--sec1-grp2/data/population.rds")
-
 ```
 
 ```{r}
@@ -26,37 +25,18 @@ library(scales)
 
 #create tidy dataset
 slim_sidewalk <- data_2015 %>% 
-  select(tree_id, sidewalk, borough, block_id, tree_dbh, curb_loc, status, health, spc_common, steward, user_type, problems, postcode, nta, nta_name, latitude, longitude)
+  select(sidewalk, borough)
 ```
 Sidewalk condition 2015
 1) damage by borough
 - damage broken down proportionally by borough
 2) damage by neighborhood
-3) damage by tree type
-4) damage by tree diameter
 
-Sidewalk condition across years. 
-
-1) Problems persist for same trees in which areas?
-2) STILL NEED TO ADD CHART NAME TO BELOW FIGURE
-```{r}
-#look at sidewalk data by borough
-data_2015 %>% 
-  group_by(borough, sidewalk) %>% 
-  summarize(count = n())%>%
-  mutate(percent = 100*count/sum(count)) #percent trees per borough by sidewalk status
-
-data_2015 %>% 
-  group_by(sidewalk, borough) %>% 
-  summarize(count = n())%>%
-  mutate(percent = 100*count/sum(count)) #percent trees per sidewalk status by borough
-```
 Percentage of damaged sidewalk in each borough, 2015
 ```{r}
 library(ggplot2)
-# plot
+# prep for plot
 damage_sidewalk <- slim_sidewalk %>%
-  select(sidewalk, borough) %>% 
   group_by(sidewalk, borough) %>% 
   summarize(count = n())%>%
   filter(sidewalk == "Damage")%>%
@@ -65,7 +45,11 @@ damage_sidewalk <- slim_sidewalk %>%
 damage_sidewalk <-damage_sidewalk%>% 
   arrange(desc(borough)) %>%
   mutate(ypos = cumsum(percent_damage)- 0.5*percent_damage )
+```
 
+Plot: How is all damaged sidewalk in NYC proportioned across boroughs?
+```{r}
+#damage plot (How is all damaged sidewalk in NYC proportioned across boroughs?)
 p<- ggplot(damage_sidewalk, aes(x="", y = percent_damage, fill=borough))+
   geom_bar(width = 1, stat = "identity")+
   coord_polar("y")+
@@ -76,41 +60,20 @@ p<- ggplot(damage_sidewalk, aes(x="", y = percent_damage, fill=borough))+
 
 p
 ```
-Damaged sidewalk by tree type
-```{r}
-#start with problem areas in each dataset
-damage_sidewalk_tree <- data_2015 %>%
-  select(tree_dbh, sidewalk, spc_common, block_id, borough, nta_name, latitude, longitude) %>%
-  filter(sidewalk == "Damage")
-  
-
-damage_sidewalk_tree_type  <- damage_sidewalk_tree %>%
-  group_by(spc_common) %>%
-  summarize(count = n())
-
-damage_sidewalk_tree_borough <- damage_sidewalk_tree %>%
-  group_by(borough) %>%
-  summarize(count = n())
-
-damage_sidewalk_tree_nta_name <- damage_sidewalk_tree %>%
-  group_by(nta_name) %>%
-  summarize(count = n())
-
-damage_sidewalk_tree_dbh <- damage_sidewalk_tree %>%
-  group_by(tree_dbh) #%>%
- # summarize(count = n(),
-            
-```
 
 Sidewalk Damage by Borough
 ```{r}
-data_2015_damage <- data_2015 %>% 
+data_2015_damage <- slim_sidewalk %>% 
   group_by(borough, sidewalk) %>% 
   summarize(count = n()) %>%
   mutate(percent_damage = count/sum(count)) %>%
   filter(sidewalk=="Damage") %>%
   group_by(borough)
+```
 
+Plot: What percentage of sidewalk damaged in each borough?
+```{r}
+#damage plot (what percentage of sidewalk damaged in each borough?)
 ggplot(data_2015_damage, aes(reorder(borough, percent_damage),100*percent_damage)) +
   geom_bar(stat = "identity", aes(fill = borough)) +
   scale_y_continuous(name="% Sidewalk Damaged") +
@@ -132,8 +95,10 @@ pop_data_2010 <- pop_data %>%
   top_n(10, population)
 
 ```
-top 10 neighborhoods by population total, 2010
+
+Plot: top 10 neighborhoods by population total, 2010
 ```{r}
+#plot of top 10 neighborhoods in NYC by largest population
 ggplot(pop_data_2010, aes(reorder(nta_name, population),population)) +
   geom_bar(stat = "identity", aes(fill = borough)) +
   scale_y_continuous(name="Population", labels = scales::comma) +
@@ -141,6 +106,7 @@ ggplot(pop_data_2010, aes(reorder(nta_name, population),population)) +
   labs(x = "Neighborhood", fill = "Borough") + 
   ggtitle("Top 10 NYC Neighborhoods by Largest Population, 2010")
 ```
+
 top 5 neighborhoods by population per borough
 ```{r}
 pop_data_2000 <- pop_data %>%
@@ -156,14 +122,15 @@ pop_data_2010 <- pop_data %>%
   top_n(5, population)
 ```
 
-top 5 neighborhoods by population by borough, 2010
+Plot: top 5 neighborhoods by population by borough, 2010
 ```{r}
+#plot of top 5 neighborhoods per borough by population
 ggplot(pop_data_2010, aes(reorder(nta_name, population),population)) +
   geom_bar(stat = "identity", aes(fill = borough)) +
   scale_y_continuous(name="Population", labels = scales::comma) +
   coord_flip() + 
   labs(x = "Neighborhood", fill = "Borough") + 
-  ggtitle("Top 5 Neighborhoods per Borough by Largest Population, 2010")
+  ggtitle("Top 5 Neighborhoods/Borough by Population, 2010")
 ```
 
 top 10 neighborhoods by population growth by borough
@@ -176,7 +143,6 @@ pop_decade <- pop_data %>%
   mutate(pop_change = population[year==2010] - population[year==2000]) %>%
   mutate(pop_growth = pop_change/population[year==2000]) 
    
-
 #look at growth rate by borough
 pop_growth_borough <- pop_decade %>%
   group_by(borough) %>%
@@ -190,6 +156,7 @@ pop_growth_borough_nta <- pop_decade %>%
 
 ```
 
+Plot: Population growth by borough, 2000 - 2010
 ```{r}
 ggplot(pop_growth_borough, aes(reorder(borough, pop_change_borough), 100*pop_change_borough)) +
   geom_bar(stat = "identity", aes(fill = borough)) +
@@ -199,6 +166,7 @@ ggplot(pop_growth_borough, aes(reorder(borough, pop_change_borough), 100*pop_cha
   ggtitle("Population Growth by Borough, 2000 - 2010")
 ```
 
+Plot: Population growth by neighborhood (top 5 per borough), 2000 - 2010
 ```{r}
 ggplot(pop_growth_borough_nta, aes(reorder(nta_name, pop_growth), 100*pop_growth)) +
   geom_bar(stat = "identity", aes(fill = borough)) +
@@ -218,6 +186,7 @@ pop_growth_neighborhood <- pop_decade %>%
 pop_growth_neighborhood_f <- pop_growth_neighborhood[1:10,]
 ```
 
+Plot: Population growth by neighborhood (all NYC), 2000 - 2010
 ```{r}
 ggplot(pop_growth_neighborhood_f, aes(reorder(nta_name, pop_growth), 100*pop_growth)) +
   geom_bar(stat = "identity", aes(fill = borough)) +
