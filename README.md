@@ -41,7 +41,11 @@ The app includes
 	
 3) analyses of tree information, human population figures, and communal resources (sidewalks) affected by trees
 
-+ **Contribution statement**: ([default](doc/a_note_on_contributions.md)) All team members contributed equally in all stages of this project. All team members approve our work presented in this GitHub repository including this contributions statement. 
++ **Contribution statement**: ([default](doc/a_note_on_contributions.md))
+
+All team members contributed to the app idea. AC cleaned and analyzed the Population data (New York City Population By Neighborhood Tabulation Areas). AC and DT explored the NYC Street Tree Data and created analytical tools for tree data. ZZ built the "Add a Tree" feature of the app. ZZ explored and analyzed the air pollution data (NYCCAS Air Pollution Rasters). LC and XL built the R Shiny app frame, incorporated member contributions, and merged the final Shiny App product. AC and LC built the slide deck for in-class presentation.
+
+All team members contributed to the GitHub repository and prepared the presentation. All team members approve our work presented in our GitHub repository including this contribution statement.
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is organized as follows.
 
