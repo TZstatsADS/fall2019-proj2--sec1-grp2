@@ -30,6 +30,7 @@ load("data/vacant_id.rdata")
 nbhood <- rgdal::readOGR("data/nbhood/geo_export_63264cca-db33-43e7-ac15-9019c83788c0.shp")
 df_2015 <- readRDS("data/sample_data_2015.rds")
 newdata <- readRDS("data/newdata.rds")
+df_2015 <- readRDS("data/newdata.rds")
 population <- readRDS("data/population.rds")
 slim_sidewalk <- df_2015[,c("sidewalk","borough")]
 
@@ -425,25 +426,29 @@ server <- function(input, output,session) {
   })
 
   
-  output$tree_health_regions_plot <- renderPlot({
-    
-    df = data()
-    df %>% group_by(borough)%>% 
-      summarise(rate = n()/nrow(df))%>%
-      arrange(rate)%>%
-      ggplot(., aes(x= reorder(borough, rate), y=rate)) +
-      geom_bar(stat='identity', fill="#1CCCC6") + 
-      ylab("trees count by regions") + xlab ("") + 
-      ggtitle("Which regions has most trees") + 
-      theme_classic() +
-      theme(axis.line = element_blank(),
-            axis.text = element_blank(),
-            axis.ticks = element_blank(),
-            plot.title = element_text(hjust = 0.5, color = "#666666")) + 
-      scale_x_discrete(labels = function(labels) {
-        sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
-      })
-  })
+  output$tree_health_regions_plot<-renderPlot({
+      #health of trees staff attending to? Maybe save resources by sending only to dire areas
+
+      #Diameter range by tree type 
+      trees_size <- df_2015 %>%
+        dplyr::select(tree_dbh, status, health, spc_common, nta_name, borough) %>%
+        filter(status == "Alive") %>%
+        mutate(species = word(spc_common, -1)) 
+      trees_size %>%
+        ggplot(., aes(species, tree_dbh)) +
+        geom_boxplot()+
+        geom_dotplot(binaxis='y', 
+                     binwidth = 1,
+                     stackdir='center', 
+                     dotsize = 0.6, 
+                     aes(fill= borough)) +
+        theme(axis.text.x = element_text(angle=65, vjust=0.6)) + 
+        labs(title="Tree Size by Species", 
+             subtitle="Tree Size vs Species: Each dot represents 1 tree in source data",
+             caption="Source: 2015 Street Tree Census",
+             x="Species",
+             y="Diameter (in)")
+    })
   
   
 
@@ -469,7 +474,130 @@ server <- function(input, output,session) {
       facet_wrap(~borough)
   })
   
+  output$add1 <- renderPlot({
+    
+    trees_alive <- data_2015 %>%
+      dplyr::select(status, spc_common, nta_name, borough)
+    
+    trees_alive_summary <- trees_alive %>%
+      group_by(status, borough) %>% 
+      summarize(count = n())
+    
+    theme_set(theme_classic())
+    
+    # Plot
+    g <- ggplot(trees_alive, aes(borough))
+    g + geom_density(aes(fill=factor(status)), alpha=0.6) + 
+      labs(title="Tree Status", 
+           subtitle="Trees Grouped by Status and Borough",
+           caption="Source: 2015 Street Tree Census",
+           x="Borough",
+           fill="Tree Status")
+  })
   
+  output$add2 <- renderPlot({
+    
+    theme_set(theme_classic())
+    
+    trees_size <- data_2015 %>%
+      dplyr::select(tree_dbh, status, health, spc_common, nta_name, borough) %>%
+      filter(status == "Alive") %>%
+      mutate(species = word(spc_common, -1)) 
+    
+    top_neighborhood <- trees_size %>%
+      group_by(nta_name) %>%
+      arrange(desc(tree_dbh)) 
+    
+    top_neighborhood[1:50, ] %>%
+      ggplot(., aes(x=nta_name, y=tree_dbh)) + 
+      geom_point(aes(col=borough, size = health)) +   # Draw points
+      geom_segment(aes(x=nta_name, 
+                       xend=nta_name, 
+                       y=min(tree_dbh), 
+                       yend=max(tree_dbh)), 
+                   linetype="dashed", 
+                   size=0.1) +   # Draw dashed lines
+      labs(title="Size of Largest Trees", 
+           subtitle="Neighborhood Vs Tree Diameter", 
+           caption="source: Street Tree Census 2015") +  
+      coord_flip()
+  })
+  
+  output$add3 <- renderPlot({
+    
+    theme_set(theme_classic())
+    
+    trees_size <- data_2015 %>%
+      dplyr::select(tree_dbh, status, health, spc_common, nta_name, borough) %>%
+      filter(status == "Alive") %>%
+      mutate(species = word(spc_common, -1)) 
+    
+    theme_set(theme_bw())
+    trees_size %>%
+      group_by(borough) %>%
+      summarize(count = n()) %>%
+      ggplot(., aes(x=borough, y=count)) + 
+      geom_point( size=5, color="dark green", fill=alpha("green", 0.3), alpha=0.7, shape=21, stroke=2)  + 
+      geom_segment(aes(x=borough, 
+                       xend=borough, 
+                       y=0, 
+                       yend=count)) + 
+      theme_light() +
+      theme(
+        panel.grid.major.x = element_blank(),
+        panel.border = element_blank(),
+        axis.ticks.x = element_blank()
+      )+
+      labs(title="Tree Count by Region", 
+           subtitle="Count Vs Borough", 
+           caption="source: Street Tree Census 2015",
+           x = "Borough",
+           y = "Number of Trees") + 
+      theme(axis.text.x = element_text(angle=65, vjust=0.6))
+  })
+  
+  
+
+  
+  output$add4 <- renderPlot({
+    
+    data_2015 %>%
+      dplyr::select(status, user_type, nta_name, borough) %>%
+      group_by(borough, user_type) %>%
+      summarize(count = n()) %>%
+      ggplot(., aes(x = borough, y = count, fill = user_type)) +   # Fill column
+      geom_bar(stat = "identity", width = .6) +   # draw the bars
+      coord_flip() +  # Flip axes
+      labs(title="Staff Type by Borough", 
+           subtitle="Count Vs Borough", 
+           caption="source: Street Tree Census 2015",
+           x = "Number of Trees",
+           y = "Borough",
+           fill = "Tree Recorder") + 
+      theme_tufte() +  # Tufte theme from ggfortify
+      scale_fill_brewer(palette = "Dark2")  # Color palette
+  })
+  
+  output$add5 <- renderPlot({
+    
+    options(scipen = 999)
+    data_2015 %>%
+      dplyr::select(status, user_type, nta_name, borough) %>%
+      group_by(status, user_type) %>%
+      summarize(count = n()) %>%
+      ggplot(., aes(x = status, y = count, fill = user_type)) +   # Fill column
+      geom_bar(stat = "identity", width = .6) +   # draw the bars
+      coord_flip() +  # Flip axes
+      labs(title="Staff Type by Tree Health", 
+           subtitle="Count Vs Tree Health", 
+           caption="source: Street Tree Census 2015",
+           x = "Number of Trees",
+           y = "Tree Health Status",
+           fill = "Tree Recorder") + 
+      theme_tufte() +  # Tufte theme from ggfortify
+      scale_fill_brewer(palette = "Dark2")  # Color palette
+    
+  })
   output$sidewalk_damaged_plot<-renderPlot({
     df = sidewalk()
     df %>% group_by(sidewalk, borough) %>% 
@@ -583,6 +711,35 @@ server <- function(input, output,session) {
       ggtitle("Top 5 Neighborhoods per Borough by Population Growth, 2000 - 2010")
     
   })
+    
+   output$population5<-renderPlot({
+    pop_data =  pop()
+    pop_decade <- pop_data %>%
+      group_by(nta_code) %>%
+      filter(!nta_code%in% c("BX99", "BX98", "BK99", "BK98", "MN99", "MN98", "QN99", "QN98", "SI99", "SI98")) %>%
+      mutate(pop_change = population[year==2010] - population[year==2000])%>%
+      mutate(pop_growth = pop_change/population[year==2000]) 
+    pop_growth_neighborhood <- pop_decade %>%
+      filter(year==2010) %>%
+      arrange(desc(pop_growth)) %>%
+      top_n(10, pop_growth)
+    pop_growth_neighborhood %>%
+      filter(borough == "Bronx") %>%
+      ggplot(., aes(x=nta_name, y=pop_growth)) +
+      geom_point(stat = "identity", size=3, col="dark red")  +
+      geom_segment(aes(y = 0,
+                       x = nta_name,
+                       yend = pop_growth,
+                       xend = nta_name),
+                   color = "black") +
+      labs(title="Population Growth 2000 - 2010 Bronx",
+           subtitle="Population Growth Vs Neighborhood",
+           x = "Neighborhood",
+           y = "Population Growth (%)") +
+      ylim(-.3, .3) + theme_bw() + 
+      coord_flip()
+  })
+    
   observeEvent(input$reset, {
     leafletProxy("treemap") %>%
       clearMarkers() %>%
