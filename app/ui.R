@@ -16,7 +16,7 @@ dashboardPage(
                 pre = 'Year'),
     sidebarMenu(
       menuItem("Forest", tabName = "treemaps",icon = icon("map")),
-      menuItem("Update Forest", tabName = "treeupdate",icon = icon("map")),
+      menuItem("Update Forest", tabName = "treeupdate",icon = icon("tree")),
       menuItem("Tree Facts", tabName = "analysis", icon = icon("dashboard")),
       menuItem("Population", tabName = "analysis2",icon = icon("dashboard"))
     
