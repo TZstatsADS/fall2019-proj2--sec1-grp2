@@ -571,11 +571,78 @@ server <- function(input, output,session) {
     x<- df_2015[,c("tree_id", "created_at","status","curb_loc","health","spc_common","address","postcode","latitude","longitude","borough")]
   })
   
+
+  
+  
+  
+  
   output$treemap2 <- renderLeaflet({ 
     df <- newdata()
-    m <- leaflet(data = data()) %>% addProviderTiles("CartoDB.Positron") %>% setView(-73.9712, 40.7831, zoom = 13)
+    m <- leaflet(data = df) %>% addProviderTiles("CartoDB.Positron") %>% setView(-73.9712, 40.7831, zoom = 13)
     m
   })
   
   
+  
+  observeEvent(input$treemap2_click, {
+    clic <- input$treemap2_click
+    click_lat <- as.numeric(clic$lat)
+    click_lng <- as.numeric(clic$lng)
+    # click_dat <- reactiveValues(clic_data = data.frame(lng=numeric(), lat=numeric()))
+    updateTextInput(session, inputId = "latitude", value = click_lat)
+    updateTextInput(session, inputId = "longitude", value = click_lng)
+    
+  })
+  
+
+  finaltmp = eventReactive(input$update,{
+                df = newdata()
+                id = max(df$tree_id) +1
+                print(id)
+                rbinc(df,data.frame("tree_id" = id,
+                          "created_at" = input$created_at, "status" = input$status,
+                         "curb_loc" = as.character(input$curb_loc),
+                         "health" = as.character(input$health),
+                         "spc_common" = as.character(input$spc_common),
+                         "address" = as.character(input$address),
+                         "postcode" = input$postcode,
+                         "latitude" = as.numeric(input$latitude),
+                         "longitude" = as.numeric(input$longitude),
+                         "borough" = input$borough))
+
+                
+                  # names<-c("tree_id", "created_at","status","curb_loc","health","spc_common","address","postcode","latitude","longitude","borough") 
+                  # colnames(tmp)<-names
+                  # tmp$created_at = input$created_at
+                  # tmp$status = input$status
+                  # tmp$curb_loc = input$curb_loc
+                  # tmp$health = input$health
+                  # tmp$spc_common = input$spc_common
+                  # tmp$address = input$address
+                  # tmp$postcode = input$postcode
+                  # tmp$borough = input$borough
+                  # tmp$latitude = as.numeric(input$latitude)
+                  # tmp$longtitude = as.numeric(input$latitude)
+                  })
+  output$test_table = DT::renderDataTable(newdata())
+  
+  
+  observeEvent(input$update,{
+    df = finaltmp()
+    id = df$tree_id
+    leafletProxy("treemap2") %>%
+      addMarkers(data = df,  lng = ~longitude,
+                 lat = ~latitude,layerId = id ,icon = greenLeafIcon, label = paste("Tree ID = ",id,sep = " "))
+  })
+  
+  
+  observeEvent(input$delete,{
+    click<-input$treemap2_marker_click
+    if(is.null(click))
+      return()
+    leafletProxy("treemap2") %>%
+      removeMarker(click$id)
+    })
 }
+
+

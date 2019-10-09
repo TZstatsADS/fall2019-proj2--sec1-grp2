@@ -140,13 +140,15 @@ dashboardPage(
                                         label = 'Date Today',
                                         start = Sys.Date()
                                       ))),
-              column(width = 2,
-                     actionButton("update", "Update")),
-              column(width = 2,
-                     actionButton("add","Add")),
-              column(width = 2,
-                     actionButton("delete","Delete"))
-              
+              column(width = 3,
+                     box(width = NULL,
+                     actionButton("update", "Update"))),
+              column(width = 3,
+                     box(width = NULL,
+                     actionButton("delete","Delete"))),
+              column(width = 12,
+                     box(width = NULL,
+                         DT::dataTableOutput("test_table")))
             ))
     
   ))
