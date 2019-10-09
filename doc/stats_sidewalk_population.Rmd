@@ -12,12 +12,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 #load in data
 data_2015 <- readRDS("~/Documents/GitHub/fall2019-proj2--sec1-grp2/data/data_2015.rds")
-data_2005 <- readRDS("~/Documents/GitHub/fall2019-proj2--sec1-grp2/data/data_2005.rds")
-data_1995 <- readRDS("~/Documents/GitHub/fall2019-proj2--sec1-grp2/data/data_1995.rds")
 pop_data <- readRDS("~/Documents/GitHub/fall2019-proj2--sec1-grp2/data/population.rds")
 ```
 
-```{r}
+```{r, warning = FALSE, message = FALSE, error = FALSE}
 #load in packages
 library(tidyverse)
 library(ggplot2)
@@ -140,7 +138,7 @@ top 10 neighborhoods by population growth by borough
 pop_decade <- pop_data %>%
   group_by(nta_code) %>%
   filter(!nta_code%in% c("BX99", "BX98", "BK99", "BK98", "MN99", "MN98", "QN99", "QN98", "SI99", "SI98")) %>%
-  mutate(pop_change = population[year==2010] - population[year==2000]) %>%
+  mutate(pop_change = population[year==2010] - population[year==2000])%>%
   mutate(pop_growth = pop_change/population[year==2000]) 
    
 #look at growth rate by borough
@@ -164,6 +162,7 @@ ggplot(pop_growth_borough, aes(reorder(borough, pop_change_borough), 100*pop_cha
   coord_flip() + 
   labs(x = "Neighborhood", y = "% Population Growth 2000 - 2010", fill = "Borough") + 
   ggtitle("Population Growth by Borough, 2000 - 2010")
+
 ```
 
 Plot: Population growth by neighborhood (top 5 per borough), 2000 - 2010
@@ -194,5 +193,21 @@ ggplot(pop_growth_neighborhood_f, aes(reorder(nta_name, pop_growth), 100*pop_gro
   labs(x = "Neighborhood", y = "% Population Growth 2000 - 2010", fill = "Borough") + 
   ggtitle("Top 10 NYC Neighborhoods by Population Growth, 2000 - 2010")
 ```
-
-
+Plot: Population Growth by Neighborhood in the Bronx
+```{r}
+pop_growth_neighborhood %>%
+  filter(borough == "Bronx") %>%
+  ggplot(., aes(x=nta_name, y=pop_growth)) + 
+    geom_point(stat = "identity", size=3, col="dark red")  +
+    geom_segment(aes(y = 0, 
+                     x = nta_name, 
+                     yend = pop_growth, 
+                     xend = nta_name), 
+                 color = "black") +
+    labs(title="Population Growth 2000 - 2010 Bronx", 
+         subtitle="Population Growth Vs Neighborhood",
+         x = "Neighborhood",
+         y = "Population Growth (%)") + 
+    ylim(-.3, .3) +
+    coord_flip()
+```

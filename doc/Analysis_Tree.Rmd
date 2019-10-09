@@ -1,0 +1,175 @@
+---
+title: "Tree Data Analytics"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: inline
+---
+
+Code for plots adapted from http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html
+```{r, warning = FALSE, message = FALSE, error = FALSE}
+#load in data
+data_2015 <- readRDS("~/Documents/GitHub/fall2019-proj2--sec1-grp2/data/data_2015.rds")
+
+data_2015 <- data_2015[1:2000,]
+#load in packages
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+library(scales)
+library(stringr)
+```
+
+
+```{r}
+#look at percentage of trees alive by borough
+
+trees_alive <- data_2015 %>%
+  select(status, spc_common, nta_name, borough)
+
+trees_alive_summary <- trees_alive %>%
+  group_by(status, borough) %>% 
+  summarize(count = n())
+```
+
+Plot: Tree Status by Borough
+```{r, error = FALSE, message = FALSE, echo = FALSE}
+theme_set(theme_classic())
+
+# Plot
+g <- ggplot(trees_alive, aes(borough))
+g + geom_density(aes(fill=factor(status)), alpha=0.6) + 
+    labs(title="Tree Status", 
+         subtitle="Trees Grouped by Status and Borough",
+         caption="Source: 2015 Street Tree Census",
+         x="Borough",
+         fill="Tree Status")
+```
+```{r}
+theme_set(theme_bw())
+
+#Diameter range by tree type 
+trees_size <- data_2015 %>%
+  select(tree_dbh, status, health, spc_common, nta_name, borough) %>%
+  filter(status == "Alive") %>%
+  mutate(species = word(spc_common, -1)) 
+```
+Plot: Tree Size by Species
+```{r}
+trees_size %>%
+  ggplot(., aes(species, tree_dbh)) +
+  geom_dotplot(binaxis='y', 
+               binwidth = 1,
+               stackdir='center', 
+               dotsize = 0.6, 
+               aes(fill= borough)) +
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) + 
+  labs(title="Tree Size by Species", 
+       subtitle="Tree Size vs Species: Each dot represents 1 tree in source data",
+       caption="Source: 2015 Street Tree Census",
+       x="Species",
+       y="Diameter (in)")
+
+```
+
+
+```{r, warning=FALSE, error=FALSE, echo=FALSE}
+top_neighborhood <- trees_size %>%
+  group_by(nta_name) %>%
+  arrange(desc(tree_dbh)) 
+
+top_neighborhood <- top_neighborhood[1:50, ]
+
+theme_set(theme_classic())
+data("top_neighborhood", package = "ggplot2")
+# Plot
+ggplot(top_neighborhood, aes(x=nta_name, y=tree_dbh)) + 
+  geom_point(aes(col=borough, size = health)) +   # Draw points
+  geom_segment(aes(x=nta_name, 
+                   xend=nta_name, 
+                   y=min(tree_dbh), 
+                   yend=max(tree_dbh)), 
+               linetype="dashed", 
+               size=0.1) +   # Draw dashed lines
+  labs(title="Size of Largest Trees", 
+       subtitle="Neighborhood Vs Tree Diameter", 
+       caption="source: Street Tree Census 2015") +  
+  coord_flip()
+```
+Plot: Tree count by region
+```{r}
+theme_set(theme_bw())
+trees_size %>%
+  group_by(borough) %>%
+  summarize(count = n()) %>%
+  ggplot(., aes(x=borough, y=count)) + 
+  geom_point( size=5, color="dark green", fill=alpha("green", 0.3), alpha=0.7, shape=21, stroke=2)  + 
+  geom_segment(aes(x=borough, 
+                   xend=borough, 
+                   y=0, 
+                   yend=count)) + 
+  theme_light() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.x = element_blank()
+  )+
+  labs(title="Tree Count by Region", 
+       subtitle="Count Vs Borough", 
+       caption="source: Street Tree Census 2015",
+       x = "Borough",
+       y = "Number of Trees") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+
+```
+
+Plot: Staff Allocation by Borough
+```{r}
+#where are staff attending to trees?
+data_2015 %>%
+  select(status, user_type, nta_name, borough) %>%
+  group_by(borough, user_type) %>%
+  summarize(count = n()) %>%
+  ggplot(., aes(x = borough, y = count, fill = user_type)) +   # Fill column
+                              geom_bar(stat = "identity", width = .6) +   # draw the bars
+                              coord_flip() +  # Flip axes
+                              labs(title="Staff Type by Borough", 
+                                   subtitle="Count Vs Borough", 
+                                   caption="source: Street Tree Census 2015",
+                                   x = "Number of Trees",
+                                   y = "Borough",
+                                   fill = "Tree Recorder") + 
+                              theme_tufte() +  # Tufte theme from ggfortify
+                              scale_fill_brewer(palette = "Dark2")  # Color palette
+
+```
+
+Plot: Tree Health vs Staff
+```{r}
+#health of trees staff attending to? Maybe save resources by sending only to dire areas
+options(scipen = 999)
+data_2015 %>%
+  select(status, user_type, nta_name, borough) %>%
+  group_by(status, user_type) %>%
+  summarize(count = n()) %>%
+  ggplot(., aes(x = status, y = count, fill = user_type)) +   # Fill column
+                              geom_bar(stat = "identity", width = .6) +   # draw the bars
+                              coord_flip() +  # Flip axes
+                              labs(title="Staff Type by Tree Health", 
+                                   subtitle="Count Vs Tree Health", 
+                                   caption="source: Street Tree Census 2015",
+                                   x = "Number of Trees",
+                                   y = "Tree Health Status",
+                                   fill = "Tree Recorder") + 
+                              theme_tufte() +  # Tufte theme from ggfortify
+                              scale_fill_brewer(palette = "Dark2")  # Color palette
+
+```
+
+
+
+
+
+
+
