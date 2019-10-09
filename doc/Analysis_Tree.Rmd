@@ -60,6 +60,7 @@ Plot: Tree Size by Species
 ```{r}
 trees_size %>%
   ggplot(., aes(species, tree_dbh)) +
+  geom_boxplot()+
   geom_dotplot(binaxis='y', 
                binwidth = 1,
                stackdir='center', 
