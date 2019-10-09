@@ -17,8 +17,8 @@ The **learning goals** for this project are:
 
 *The above general statement about project 2 can be removed once you are finished with your project. It is optional.
 
-## Project Title Lorem ipsum dolor sit amet
-Term: Spring 2019
+## Project Title: NYC Canopy
+Term: Fall 2019
 
 + Team #2
 + **Canopy NYC: A Shiny App to Map Trees and Pollution**: + Team members
