@@ -1,15 +1,29 @@
 # TreeApp version2
-
-# global.r
-
 library(shinydashboard)
 library(leaflet)
 library(dplyr)
 library(curl) 
 library(ggplot2)
-df = readRDS("../data/sample_data.rds")
-load("../data/pollution.RData")
-nbhood <- rgdal::readOGR("../data/nbhood/geo_export_63264cca-db33-43e7-ac15-9019c83788c0.shp")
+library(raster)
+library(rgdal)
+library(shinyWidgets)
+library(maptools)
+library(tigris)
+library(RColorBrewer)
+library(dplyr)
+library(grDevices)
+library(rgeos)
+library(tidyverse)
+library(ggplot2)
+library(scales)
+
+df = readRDS("data/sample_data.rds")
+load("data/pollution.RData")
+nbhood <- rgdal::readOGR("data/nbhood/geo_export_63264cca-db33-43e7-ac15-9019c83788c0.shp")
+df_2015 <- readRDS("data/sample_data_2015.rds")
+population <- readRDS("data/population.rds")
+slim_sidewalk <- df_2015[,c("sidewalk","borough")]
+
 
 NYC_coord <- c(lon = -74.00597, lat = 40.71278)
 df$full_address <- mutate(df, full_address = paste(address, zip_city, state, postcode, sep = ', '))
@@ -59,6 +73,26 @@ set_labels <- function(bins){
   return(legend_labels)
 }
 
+load("data/combined.rdata")
+load("data/data_by_borough.rdata")
+
+NYC_coord <- c(lon = -74.00597, lat = 40.71278)
+
+legend_title <- c("Tree count", "Tree density (/KM2)")
+
+popup <- list()
+
+for(i in 1:5){
+  popup1 <- paste("<strong>Borough: </strong>", data_by_borough[[i]]@data$boro_name,
+                  "<br><strong>Neighborhood: </strong>", data_by_borough[[i]]@data$ntaname,
+                  "<br><strong>Counts: </strong>", data_by_borough[[i]]@data$n)
+  popup2 <- paste("<strong>Borough: </strong>", data_by_borough[[i]]@data$boro_name,
+                  "<strong>Neighborhood: </strong>", data_by_borough[[i]]@data$ntaname,
+                  "<br><strong>Density: </strong>", data_by_borough[[i]]@data$tree_per_km2)
+  popup[[i]] <- list(popup1, popup2)
+}
+
+
 
 
 
@@ -69,13 +103,15 @@ set_labels <- function(bins){
 
 server <- function(input, output,session) {
   
-  
   data <- reactive({
     x <- df %>% filter(Year == input$year)
   })
   
+  sidewalk<- reactive({x <- slim_sidewalk}) 
+  pop <- reactive({x <- population})
+  
   greenLeafIcon <- makeIcon(
-    iconUrl = "../www/tree.png",
+    iconUrl = "www/tree.png",
     iconWidth = 18, iconHeight = 20,
     iconAnchorX = 0, iconAnchorY = 0
   )
@@ -282,21 +318,21 @@ server <- function(input, output,session) {
   
   # Analytics Tab
 
-  output$boro_count_plot<- renderPlot({
-    df = data()
-    df %>% group_by(borough)%>%
-      summarise(rate = n()/nrow(df))%>%
-      arrange(rate)%>%
-      ggplot(., aes(x= reorder(borough, rate), y=rate)) +
-      geom_bar(stat='identity') + 
-      ylab("trees count by regions") + xlab ("") + 
-      ggtitle("Which regions has most trees?") + 
-      theme_minimal() + 
-      scale_x_discrete(labels = function(labels) {
-        sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
-      })
-  })
-  
+  # output$boro_count_plot<- renderPlot({
+  #   df = data()
+  #   df %>% group_by(borough)%>%
+  #     summarise(rate = n()/nrow(df))%>%
+  #     arrange(rate)%>%
+  #     ggplot(., aes(x= reorder(borough, rate), y=rate)) +
+  #     geom_bar(stat='identity') + 
+  #     ylab("trees count by regions") + xlab ("") + 
+  #     ggtitle("Which regions has most trees?") + 
+  #     theme_minimal() + 
+  #     scale_x_discrete(labels = function(labels) {
+  #       sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
+  #     })
+  # })
+  # 
   
   output$boro_size_plot <- renderPlot({
     df = data()
@@ -307,7 +343,11 @@ server <- function(input, output,session) {
       geom_bar(stat='identity', fill="chartreuse4") +
       ylab("Avg of Tree Diameter Measured") + xlab ("Boroughs") +
       ggtitle("Largest tree size by region") +
-      theme_minimal() +
+      theme_classic() +
+      theme(axis.line = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            plot.title = element_text(hjust = 0.5, color = "#666666")) +
       theme(text = element_text(size=15), plot.title = element_text(size=20, hjust = 0.5))  + 
       scale_x_discrete(labels = function(labels) {
         sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
@@ -322,9 +362,13 @@ server <- function(input, output,session) {
       summarise(rate = n()/nrow(df))%>%
       ggplot(., aes(x= reorder(health, rate), y=rate)) +
       geom_bar(stat='identity', fill="chartreuse4") + 
-      ylab("Tree count percentage") + xlab ("Boroughs") + 
-      ggtitle("Alive tree by tree type") + 
-      theme_minimal() + 
+      ylab("Tree count percentage") + xlab ("Health Status") + 
+      ggtitle("Health Condition by Boroughs") + 
+      theme_classic() +
+      theme(axis.line = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            plot.title = element_text(hjust = 0.5, color = "#666666")) + 
       theme(text = element_text(size=15), plot.title = element_text(size=20, hjust = 0.5)) + 
       scale_x_discrete(labels = function(labels) {
         sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
@@ -335,14 +379,18 @@ server <- function(input, output,session) {
     df = data()
     df[df$status == "Alive",] %>% 
       group_by(spc_common)%>% 
-      summarise(rate = n()/nrow(processed_df))%>%
+      summarise(rate = n()/nrow(df))%>%
       arrange(desc(rate))%>%
       slice(1:10) %>%
       ggplot(., aes(x= reorder(spc_common, rate), y=rate)) +
       geom_bar(stat='identity', fill="chartreuse4") + 
       ylab("Tree count percentage") + xlab ("Boroughs") + 
       ggtitle("Alive tree by tree type") + 
-      theme_minimal() + 
+      theme_classic() +
+      theme(axis.line = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            plot.title = element_text(hjust = 0.5, color = "#666666")) + 
       theme(text = element_text(size=15), plot.title = element_text(size=20, hjust = 0.5)) +
       scale_x_discrete(labels = function(labels) {
         sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
@@ -350,6 +398,165 @@ server <- function(input, output,session) {
       coord_flip()
   })
 
+  
+  output$tree_health_regions_plot <- renderPlot({
+    
+    df = data()
+    df %>% group_by(borough)%>% 
+      summarise(rate = n()/nrow(df))%>%
+      arrange(rate)%>%
+      ggplot(., aes(x= reorder(borough, rate), y=rate)) +
+      geom_bar(stat='identity', fill="#1CCCC6") + 
+      ylab("trees count by regions") + xlab ("") + 
+      ggtitle("Which regions has most trees") + 
+      theme_classic() +
+      theme(axis.line = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            plot.title = element_text(hjust = 0.5, color = "#666666")) + 
+      scale_x_discrete(labels = function(labels) {
+        sapply(seq_along(labels), function(i) paste0(ifelse(i %% 2 == 0, '', '\n'), labels[i]))
+      })
+  })
+  
+  
+
+  # The following is not complete.   
+  output$alive_tree_health_plot<- renderPlot({
+    df = data()
+    df[(df$status == "Alive") & (df$health != ""),] %>% 
+      group_by(borough,health)%>% 
+      summarise(share = n())%>%
+      arrange(desc(share)) %>%
+      ggplot(., aes(x= "", y=share, fill = health)) +
+      geom_bar(width = 0.2, size = 0.2, color = "white", stat = "identity") +
+      coord_polar("y") +
+      geom_text(aes(label = ""), 
+                position = position_stack(vjust = 0.5)) +
+      ggtitle("Alive Tree Health Condition by Borough") +
+      guides(fill = guide_legend(reverse = TRUE)) +
+      theme_classic() +
+      theme(axis.line = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            plot.title = element_text(hjust = 0.5, color = "#666666"))+
+      facet_wrap(~borough)
+  })
+  
+  
+  output$sidewalk_damaged_plot<-renderPlot({
+    df = sidewalk()
+    df %>% group_by(sidewalk, borough) %>% 
+      summarize(count = n())%>%
+      filter(sidewalk == "Damage")%>%
+      mutate(percent_damage = count/sum(count))%>%
+      arrange(desc(borough)) %>%
+      mutate(ypos = cumsum(percent_damage)- 0.5*percent_damage )%>%
+      ggplot(., aes(x="", y = percent_damage, fill=borough))+
+      geom_bar(width = 1, stat = "identity")+
+      coord_polar("y")+
+      theme_void()+
+      geom_text(aes(y = ypos, label = percent(percent_damage)), color = "white")+
+      labs(fill = "Borough")+
+      ggtitle("Proportion of NYC Sidewalk Damage per Borough")+
+      theme_classic() +
+      theme(axis.line = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            plot.title = element_text(hjust = 0.5, color = "#666666"))
+    
+  })
+  
+  
+  output$sidewalk_damaged_plot2 <- renderPlot({
+    df = sidewalk()
+    df%>% 
+      group_by(borough, sidewalk) %>% 
+      summarize(count = n()) %>%
+      mutate(percent_damage = count/sum(count)) %>%
+      filter(sidewalk=="Damage") %>%
+      group_by(borough) %>%
+      ggplot(., aes(reorder(borough, percent_damage),100*percent_damage)) +
+      geom_bar(stat = "identity", aes(fill = borough)) +
+      scale_y_continuous(name="% Sidewalk Damaged") +
+      coord_flip() +
+      labs(x = "Borough", fill = "Borough") + 
+      ggtitle("Sidewalk Damage by Borough, 2015")+
+      theme_classic() +
+      theme(axis.line = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            plot.title = element_text(hjust = 0.5, color = "#666666"))
+  })
+  
+  # Population Analytics Tab
+  
+  output$population1 <- renderPlot({
+      pop_data = pop()
+      pop_data[pop_data$year ==2000,] %>%
+         
+        arrange(desc(population)) %>%
+        top_n(10, population)%>%
+        ggplot(., aes(reorder(nta_name, population),population)) +
+        geom_bar(stat = "identity", aes(fill = borough)) +
+        scale_y_continuous(name="Population", labels = scales::comma) +
+        coord_flip() +
+        labs(x = "Neighborhood", fill = "Borough") + 
+        ggtitle("Top 10 NYC Neighborhoods by Largest Population, 2000")
+    
+  })
+  
+  output$population2 <- renderPlot({
+    pop_data = pop()
+    pop_data[pop_data$year ==2010,] %>%
+      
+      arrange(desc(population)) %>%
+      top_n(10, population)%>%
+      ggplot(., aes(reorder(nta_name, population),population)) +
+      geom_bar(stat = "identity", aes(fill = borough)) +
+      scale_y_continuous(name="Population", labels = scales::comma) +
+      coord_flip() +
+      labs(x = "Neighborhood", fill = "Borough") + 
+      ggtitle("Top 10 NYC Neighborhoods by Largest Population, 2010")
+    
+  })
+  
+  output$population3 <- renderPlot({
+    pop_data = pop()
+    pop_data %>%
+      group_by(nta_code) %>%
+      filter(!nta_code%in% c("BX99", "BX98", "BK99", "BK98", "MN99", "MN98", "QN99", "QN98", "SI99", "SI98")) %>%
+      mutate(pop_change = population[year==2010] - population[year==2000]) %>%
+      mutate(pop_growth = pop_change/population[year==2000]) %>%
+      group_by(borough) %>%
+      summarize(pop_change_borough = sum(pop_change)/2/sum(population[year==2000])) %>%
+      ggplot(., aes(reorder(borough, pop_change_borough), 100*pop_change_borough)) +
+      geom_bar(stat = "identity", aes(fill = borough)) +
+      #scale_y_continuous(name="Population", labels = scales::comma) +
+      coord_flip() + 
+      labs(x = "Neighborhood", y = "% Population Growth 2000 - 2010", fill = "Borough") + 
+      ggtitle("Population Growth by Borough, 2000 - 2010")
+    
+  })
+  
+  output$population4 <- renderPlot({
+    pop_data = pop()
+    pop_data %>%
+      group_by(nta_code) %>%
+      filter(!nta_code%in% c("BX99", "BX98", "BK99", "BK98", "MN99", "MN98", "QN99", "QN98", "SI99", "SI98")) %>%
+      mutate(pop_change = population[year==2010] - population[year==2000]) %>%
+      mutate(pop_growth = pop_change/population[year==2000]) %>%
+      group_by(borough) %>%
+      filter(year == 2010) %>%
+      arrange(desc(pop_growth), .by_group = TRUE) %>%
+      top_n(5, pop_growth)%>%
+      ggplot(., aes(reorder(nta_name, pop_growth), 100*pop_growth)) +
+      geom_bar(stat = "identity", aes(fill = borough)) +
+      coord_flip() + 
+      labs(x = "Neighborhood", y = "% Population Growth 2000 - 2010", fill = "Borough") + 
+      ggtitle("Top 5 Neighborhoods per Borough by Population Growth, 2000 - 2010")
+    
+  })
   observeEvent(input$reset, {
     leafletProxy("treemap") %>%
       clearMarkers() %>%
@@ -357,5 +564,18 @@ server <- function(input, output,session) {
       removeLayersControl() %>%
       clearShapes()
   })
+  
+  # Update on another treemap
+  
+  newdata <- reactive({
+    x<- df_2015[,c("tree_id", "created_at","status","curb_loc","health","spc_common","address","postcode","latitude","longitude","borough")]
+  })
+  
+  output$treemap2 <- renderLeaflet({ 
+    df <- newdata()
+    m <- leaflet(data = data()) %>% addProviderTiles("CartoDB.Positron") %>% setView(-73.9712, 40.7831, zoom = 13)
+    m
+  })
+  
   
 }
