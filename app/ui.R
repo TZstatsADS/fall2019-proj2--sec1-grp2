@@ -16,9 +16,9 @@ dashboardPage(
                 pre = 'Year'),
     sidebarMenu(
       menuItem("Forest", tabName = "treemaps",icon = icon("map")),
-      menuItem("Update Forest", tabName = "treeupdate",icon = icon("map")),
+      menuItem("Update Forest", tabName = "treeupdate",icon = icon("tree")),
       menuItem("Tree Facts", tabName = "analysis", icon = icon("dashboard")),
-      menuItem("Population", tabName = "analysis2",icon = icon("dashboard"))
+      menuItem("Population", tabName = "analysis2",icon = icon("smile-wink"))
     
     )
   ),
@@ -85,27 +85,84 @@ dashboardPage(
                    plotOutput("sidewalk_damaged_plot"))),
         column(width = 4,
                box(width = NULL,
-                   plotOutput("sidewalk_damaged_plot2")))
+                   plotOutput("sidewalk_damaged_plot2"))),
+        column(width = 4,
+               box(width  = NULL,
+                   plotOutput("add1"))),
+        column(width = 4,
+               box(width = NULL,
+                   plotOutput("add2"))),
+        column(width = 4,
+               box(width = NULL,
+                   plotOutput("add3"))),
+        column(width = 4,
+               box(width = NULL,
+                   plotOutput("add4"))),
+        column(width = 5,
+               box(width = NULL,
+                   plotOutput("add5")))
         
       )
     ),
     
     tabItem("analysis2",
             fluidRow(
-              column(width = 6,
-                     box(width = NULL,
-                         plotOutput("population1"))),
-              column(width = 6,
-                     box(width = NULL,
-                         plotOutput("population2"))),
-              column(width = 6,
-                     box(width = NULL,
-                         plotOutput("population3"))),
-              
-              column(width = 6,
-                     box(width = NULL,
-                         plotOutput("population4")))
+              tabBox(
+                # Title can include an icon
+                title = tagList(shiny::icon("user"), "TOP10 Largest Population"),
+                tabPanel("2000",
+                         box(width = NULL,
+                             plotOutput("population1"))
+                ),
+                tabPanel("2010",
+                         box(width = NULL,
+                             plotOutput("population2")))),
+              # column(width = 6,
+              #        box(width = NULL,
+              #            plotOutput("population1"))),
+              # column(width = 6,
+              #        box(width = NULL,
+              #            plotOutput("population2"))),
+              tabBox(
+                # Title can include an icon
+                title = tagList(shiny::icon("chart-line"), "Population Growth"),
+                tabPanel("Boroughs",
+                         box(width = NULL,
+                             plotOutput("population3"))),
+                tabPanel("Neighborhoods",
+                         box(width = NULL,
+                             plotOutput("population4")))),
+            # fluidRow(
+            #   tabBox(
+            #     # Title can include an icon
+            #     title = tagList(shiny::icon("user"), "TOP10 Largest Population"),
+            #     tabPanel("2000",
+            #              box(width = NULL,
+            #                  plotOutput("population4"))
+            #     )),
+              # column(width = 6,
+              #        box(width = NULL,
+              #            plotOutput("population1"))),
+              # column(width = 6,
+              #        box(width = NULL,
+              #            plotOutput("population2"))),
+              tabBox(
+                # Title can include an icon
+                title = tagList(shiny::icon("balance-scale"), "Population Growth Vs Neighborhood"),
+                tabPanel("2000 - 2010",
+                         box(width = NULL,
+                             plotOutput("population5"))
+                ))
             )),
+    
+              
+            #   column(width = 6,
+            #          box(width = NULL,
+            #              plotOutput("population4"))),
+            #   column(width = 6,
+            #          box(width = NULL,
+            #              plotOutput("population5")))
+            # )),
     
     tabItem("treeupdate",
             fluidRow(
