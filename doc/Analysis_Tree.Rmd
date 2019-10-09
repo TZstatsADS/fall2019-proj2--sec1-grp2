@@ -46,6 +46,7 @@ g + geom_density(aes(fill=factor(status)), alpha=0.6) +
          x="Borough",
          fill="Tree Status")
 ```
+
 ```{r}
 theme_set(theme_bw())
 
@@ -73,18 +74,16 @@ trees_size %>%
 
 ```
 
-
+Plot: Largest Trees by Neighborhood
 ```{r, warning=FALSE, error=FALSE, echo=FALSE}
+theme_set(theme_classic())
+
 top_neighborhood <- trees_size %>%
   group_by(nta_name) %>%
   arrange(desc(tree_dbh)) 
 
-top_neighborhood <- top_neighborhood[1:50, ]
-
-theme_set(theme_classic())
-data("top_neighborhood", package = "ggplot2")
-# Plot
-ggplot(top_neighborhood, aes(x=nta_name, y=tree_dbh)) + 
+top_neighborhood[1:50, ] %>%
+  ggplot(., aes(x=nta_name, y=tree_dbh)) + 
   geom_point(aes(col=borough, size = health)) +   # Draw points
   geom_segment(aes(x=nta_name, 
                    xend=nta_name, 
@@ -97,7 +96,7 @@ ggplot(top_neighborhood, aes(x=nta_name, y=tree_dbh)) +
        caption="source: Street Tree Census 2015") +  
   coord_flip()
 ```
-Plot: Tree count by region
+Plot: Tree Count by Region
 ```{r}
 theme_set(theme_bw())
 trees_size %>%
