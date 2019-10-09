@@ -1,84 +1,155 @@
-ui <- fluidPage(
-  setBackgroundImage(
-    src = "background_1.jpg"
+library(shinydashboard)
+library(leaflet)
+
+
+dashboardPage(
+  skin = "green",
+  dashboardHeader(title = "NYC Canopy"),
+  dashboardSidebar(
+    tags$style(HTML('.js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge , .js-irs-0 .irs-bar {background: green}',
+                    '#reset{background-color:#7DCEA0}', 
+                    ".main-sidebar { font-size: 18px; }",
+                    ".irs-grid-text { font-size: 12px; }")),
+    sliderInput("year", h5("Year"),
+                min = 1995, max = 2015, value = 2015,
+                step = 10, animate = TRUE,
+                pre = 'Year'),
+    sidebarMenu(
+      menuItem("Forest", tabName = "treemaps",icon = icon("map")),
+      menuItem("Update Forest", tabName = "treeupdate",icon = icon("map")),
+      menuItem("Tree Facts", tabName = "analysis", icon = icon("dashboard")),
+      menuItem("Population", tabName = "analysis2",icon = icon("dashboard"))
+    
+    )
   ),
-  sidebarPanel(
-      tabsetPanel(id = "tabset",
-        tabPanel( "Trees", 
-          helpText("Choose tree information in different years"),
-          selectInput("year", label = "Year:",
-                      choices = c("2015", "2005", "1995")),
+  dashboardBody(
+  tabItems(
+    tabItem("treemaps",
+            fluidRow(
+              column(width = 6, 
+                     box(width = NULL, solidHeader = TRUE,
+                         leafletOutput("treemap", height = 750))),
+              column(width = 6,
+                     box(width = NULL, 
+                         helpText("Use Backspace in your keyboard to deselect items"),
+                         uiOutput("treeSelect")), 
+                     box(width = NULL,
+                         helpText("Click to zoom in which borough you want to see"),
+                         uiOutput("boroSelect2"))),
+              column(width = 3,
+                     box(width = NULL,
+                         helpText("Too see a specific borough"),
+                         uiOutput("boroSelect")),
+                     box(width = NULL,
+                         helpText("Choose pollutant"),
+                         selectInput("pollutant", "Pollutants", 
+                                     choices = c("None" = "None", "PM2.5" = "pm", "Nitrogen Dioxide (NO2)" = "no2", 
+                                                 "Nitric Oxide (NO)" = "no", "Black Carbon" = "bc"),
+                                     selected = "None"))),
+              # column(width = 3,
+              #        box(width = NULL,
+              #            helpText("Click to zoom in which borough you want to see!"),
+              #            uiOutput("boroSelect2"))),
+             
+              column(width = 3,
+                     box(width = NULL,
+                         helpText("Measure the trees"),
+                         selectInput("count", "Measure", 
+                                     choices = c("Disable", "Total number of trees" = "n",
+                                                 "Number of trees per KM2" = "density"),
+                                     selected = "Disable")),
+                     box(width = NULL,
+                         actionButton("reset", "Clean All Filters")))
+                     
         
-          # sliderInput("year", h5("Year"),
-          #             min = 1995, max = 2015, value = 1995,
-          #             step = 10, animate = TRUE,
-          #             pre = 'Year'),
-          
-          
-          # sliderInput("bw_adjust", label = "Bandwidth adjustment:",
-          #             min = 0.2, max = 2, value = 1, step = 0.2),
-          # helpText("Choose different boroughs"),
-          # selectInput("select_borough", "Boroughs", 
-          #             choices = c("All", "Manhattan", "Brooklyn", "Queens",
-          #                         "Staten Island", "The Bronx"), selected = "All"), 
-          
-          selectInput("borough", "Boroughs trees", 
-                      choices = c("Disable", "Manhattan", "Brooklyn", "Queens",
-                                  "Staten Island", "Bronx"), selected = "Disable"), 
-          
-          helpText("A-Z different tree types"),
-          selectInput("select_treetype", "Tree types", 
-                      choices = c("None", "All", "American elm", "American linden", "Amur maple", "Ash", "Atlantic white cedar", "Black cherry", "Black oak", 
-                                  "Callery pear", "Chinese fringetree", "Crab apple", "Crepe myrtle", "Douglas-fir", "Eastern redcedar", "Ginkgo", "Hedge maple", 
-                                  "Honeylocust", "Japanese zelkova", "Kentucky yellowwood", "London planetree", "Mulberry", "Northern red oak", "Norway maple", "Ohio buckeye", 
-                                  "Pignut hickory", "Pin oak", "Red maple", "Sawtooth oak", "Scarlet oak", "Silver linden", "Silver maple", "Sophora", 
-                                  "Southern magnolia", "Swamp white oak", "Sweetgum", "Sycamore maple", "Tulip-poplar", "Turkish hazelnut", "White oak", "Willow oak"), selected = "None")), 
-          # h2("Trees"),
-          # p("Trees Trees Trees"),
-          # 
-          # img(src="trees_selector.png", height = 271, width = 500),
+      )
+    ),
+    
+    tabItem("analysis",
+      fluidRow(
+
+        column(width = 4,
+               box(width = NULL,
+                   plotOutput("boro_size_plot"))),
+        column(width = 4,
+               box(width = NULL,
+                   plotOutput("health_plot"))),
+        column(width = 4,
+               box(width = NULL,
+                   plotOutput("alive_tree_health_plot"))),
+        column(width = 4,
+               box(width  = NULL,
+                   plotOutput("tree_health_regions_plot"))),
+        column(width = 4,
+               box(width = NULL,
+                   plotOutput("sidewalk_damaged_plot"))),
+        column(width = 4,
+               box(width = NULL,
+                   plotOutput("sidewalk_damaged_plot2")))
         
-      tabPanel( "Pollutants", 
-                
-        selectInput("pollutant", "Pollutants", 
-                    choices = c("None" = "None", "PM2.5" = "pm", "Nitrogen Dioxide (NO2)" = "no2", 
-                                "Nitric Oxide (NO)" = "no", "Black Carbon" = "bc"),
-                    selected = "None")),  
-
-      tabPanel( "Neighbourhood",
-                # selectInput("neighbour", "Neighbourhood",
-                #             choices = c("Enable", "Disable"),
-                #             selected = "Disable"),
-                
-                selectInput("count", "Measure", 
-                            choices = c("Disable", "Total number of trees" = "n",
-                                        "Number of trees per KM2" = "density"),
-                            selected = "Disable")),
-      
-
-        # selectInput("n_breaks", label = "Number of bins:",
-        #             choices = c(10, 20, 35, 50), selected = 20),
-        # 
-        # sliderInput("bw_adjust", label = "Bandwidth adjustment:",
-        #             min = 0.2, max = 2, value = 1, step = 0.2)),
-      tabPanel("Statistical analysis", 
-               selectInput("select_statistical", "Statistical analysis",
-                           choices = c("Largest tree size by region", "Which regions has most trees", "Health status across boroughs", "Alive tree by tree type",
-                                       "Health condition for trees"), selected = "Largest tree size by region"))
-      ), 
-      helpText("Choose different boroughs"),
-      selectInput("select_borough", "Zoom in boroughs", 
-                  choices = c("All", "Manhattan", "Brooklyn", "Queens",
-                              "Staten Island", "The Bronx"), selected = "All"), 
-      actionButton("reset", "Clean")), 
-
-  mainPanel(
-    leafletOutput("mymap",height = 800), 
-    plotOutput("plot")
-    # plotOutput("plot")
-  )
+      )
+    ),
+    
+    tabItem("analysis2",
+            fluidRow(
+              column(width = 6,
+                     box(width = NULL,
+                         plotOutput("population1"))),
+              column(width = 6,
+                     box(width = NULL,
+                         plotOutput("population2"))),
+              column(width = 6,
+                     box(width = NULL,
+                         plotOutput("population3"))),
+              
+              column(width = 6,
+                     box(width = NULL,
+                         plotOutput("population4")))
+            )),
+    
+    tabItem("treeupdate",
+            fluidRow(
+              column(width = 6,
+                    box(width = NULL,
+                        leafletOutput("treemap2", height = 750))),
+              column(width = 3,
+                     box(width = NULL,
+                         textInput("latitude", "Latitude", placeholder = "Enter latitude..")),
+                     box(width = NULL,
+                         textInput("longitude", "Longitude", placeholder = "Enter longitude.."))),
+              column(width = 3,
+                     box(width = NULL,
+                         textInput("spc_common", "Tree Type", placeholder = "Enter tree type..")),
+                     box(width = NULL,
+                         selectInput("status", "Status", choices = c("Alive", "Stump", "Dead")))),
+              column(width = 3,
+                     box(width = NULL,
+                         textInput("address", "Address", placeholder = "Enter the address for the tree.. ")),
+                     box(width = NULL,
+                         selectInput("borough","Borough", choices = c("Manhattan", "Brooklyn", "Queens",
+                                                                      "Staten Island", "Bronx"))),
+                     box(width = NULL,
+                         textInput("postcode","Zipcode", placeholder = "Enter the zipcode for the tree.."))),
+              column(width = 3,
+                     box(width = NULL,
+                         selectInput("health","Health Info", choices = c("Fair","Good","Poor"), selected ="Fair")),
+                     box(width = NULL,
+                         selectInput("curb_loc","Curb Location",choices = c("OnCurb","OffsetFromCurb"),selected = "OnCurb")),
+                     box(width = NULL,
+                         dateInput('created_at', 
+                                        label = 'Date Today',
+                                        start = Sys.Date()
+                                      ))),
+              column(width = 3,
+                     box(width = NULL,
+                     actionButton("update", "Update"))),
+              column(width = 3,
+                     box(width = NULL,
+                     actionButton("delete","Delete"))),
+              column(width = 12,
+                     box(width = NULL,
+                         DT::dataTableOutput("test_table")))
+            ))
+    
+  ))
 )
-
-
-
-
