@@ -18,6 +18,8 @@ The **learning goals** for this project are:
 *The above general statement about project 2 can be removed once you are finished with your project. It is optional.
 
 ## Project Title: NYC Canopy
+[Shiny App](https://zoraxl2788.shinyapps.io/treeappv2/)
+[Presentation Slides](https://docs.google.com/presentation/d/1bbIEB2i_deGZsB5M0sKe9NvVHt9uWDsFqEAu7xJED1c/edit#slide=id.g630bec13f4_0_445)
 Term: Fall 2019
 
 + Team #2
