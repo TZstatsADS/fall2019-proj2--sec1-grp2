@@ -1,6 +1,7 @@
 # TreeApp version2
 library(shinydashboard)
 library(leaflet)
+library(sp)
 library(dplyr)
 library(curl) 
 library(ggplot2)
@@ -17,12 +18,21 @@ library(tidyverse)
 library(ggplot2)
 library(scales)
 
+#source("global.R")
+# x<- df_2015[,c("tree_id", "created_at","status","curb_loc","health","spc_common","address","postcode","latitude","longitude","borough","sidewalk")]
+# saveRDS(x, "data/newdata.rds")
+
 df = readRDS("data/sample_data.rds")
 load("data/pollution.RData")
+# vacant_id = numeric(0)
+# save(vacant_id, file = "vacant_id.rdata")
+load("data/vacant_id.rdata")
 nbhood <- rgdal::readOGR("data/nbhood/geo_export_63264cca-db33-43e7-ac15-9019c83788c0.shp")
 df_2015 <- readRDS("data/sample_data_2015.rds")
+newdata <- readRDS("data/newdata.rds")
 population <- readRDS("data/population.rds")
 slim_sidewalk <- df_2015[,c("sidewalk","borough")]
+
 
 
 NYC_coord <- c(lon = -74.00597, lat = 40.71278)
@@ -73,6 +83,21 @@ set_labels <- function(bins){
   return(legend_labels)
 }
 
+nbhood_detect <- function(lng, lat){
+  for(i in 1:195){
+    polygon_coord <- nbhood@polygons[[i]]@Polygons[[1]]@coords
+    result <- point.in.polygon(lng, lat, polygon_coord[,1], polygon_coord[,2])
+    if(result > 0){
+      borough <- nbhood@data$boro_name[i]
+      nb <- nbhood@data$ntaname[i]
+      
+      output <- c(borough = as.character(borough), nb = as.character(nb))
+      return(output)
+    }
+  }
+  return("Error!")
+}
+
 load("data/combined.rdata")
 load("data/data_by_borough.rdata")
 
@@ -107,6 +132,7 @@ server <- function(input, output,session) {
     x <- df %>% filter(Year == input$year)
   })
   
+  dataSource <- df
   sidewalk<- reactive({x <- slim_sidewalk}) 
   pop <- reactive({x <- population})
   
@@ -210,8 +236,8 @@ server <- function(input, output,session) {
   observeEvent(input$count, {
     if(input$count == "Disable"){
       leafletProxy("treemap")
-      #   filtered <- dataSource()%>% filter(spc_common == input$select_treetype)
-      #   leafletProxy("mymap", data = filtered) %>%
+      #   filtered <- newdata%>% filter(spc_common == input$select_treetype)
+      #   leafletProxy("treemap", data = filtered) %>%
       #     clearMarkers() %>%
       #     clearControls() %>%
       #     clearShapes() %>%
@@ -567,82 +593,317 @@ server <- function(input, output,session) {
   
   # Update on another treemap
   
-  newdata <- reactive({
-    x<- df_2015[,c("tree_id", "created_at","status","curb_loc","health","spc_common","address","postcode","latitude","longitude","borough")]
-  })
+  # newdata <- reactive({
+  #   x<- df_2015[,c("tree_id", "created_at","status","curb_loc","health","spc_common","address","postcode","latitude","longitude","borough")]
+  # })
+  # 
+newdata <- df_2015[,c("tree_id", "created_at","status","curb_loc","health","spc_common","address","postcode","latitude","longitude","borough","sidewalk")]
+saveRDS(newdata, "data/newdata.rds") 
+  # 
+  # 
+  # observeEvent(input$treemap2_click, {
+  #   clic <- input$treemap2_click
+  #   click_lat <- as.numeric(clic$lat)
+  #   click_lng <- as.numeric(clic$lng)
+  #   # click_dat <- reactiveValues(clic_data = data.frame(lng=numeric(), lat=numeric()))
+  #   updateTextInput(session, inputId = "latitude", value = click_lat)
+  #   updateTextInput(session, inputId = "longitude", value = click_lng)
+  #   
+  # })
+  # 
+  # 
+  # finaltmp = eventReactive(input$update,{
+  #               df = newdata
+  #               id = max(df$tree_id) +1
+  #               print(id)
+  #               rbinc(df,data.frame("tree_id" = id,
+  #                         "created_at" = input$created_at, "status" = input$status,
+  #                        "curb_loc" = as.character(input$curb_loc),
+  #                        "health" = as.character(input$health),
+  #                        "spc_common" = as.character(input$spc_common),
+  #                        "address" = as.character(input$address),
+  #                        "postcode" = input$postcode,
+  #                        "latitude" = as.numeric(input$latitude),
+  #                        "longitude" = as.numeric(input$longitude),
+  #                        "borough" = input$borough))
+  # 
+  #               
+  #                 # names<-c("tree_id", "created_at","status","curb_loc","health","spc_common","address","postcode","latitude","longitude","borough") 
+  #                 # colnames(tmp)<-names
+  #                 # tmp$created_at = input$created_at
+  #                 # tmp$status = input$status
+  #                 # tmp$curb_loc = input$curb_loc
+  #                 # tmp$health = input$health
+  #                 # tmp$spc_common = input$spc_common
+  #                 # tmp$address = input$address
+  #                 # tmp$postcode = input$postcode
+  #                 # tmp$borough = input$borough
+  #                 # tmp$latitude = as.numeric(input$latitude)
+  #                 # tmp$longtitude = as.numeric(input$latitude)
+  #                 })
+  # output$test_table = DT::renderDataTable(newdata)
+  # 
+  # 
+  # observeEvent(input$update,{
+  #   df = finaltmp()
+  #   id = df$tree_id
+  #   leafletProxy("treemap2") %>%
+  #     addMarkers(data = df,  lng = ~longitude,
+  #                lat = ~latitude,layerId = id ,icon = greenLeafIcon, label = paste("Tree ID = ",id,sep = " "))
+  # })
+  # 
+  # 
+  # observeEvent(input$delete,{
+  #   click<-input$treemap2_marker_click
+  #   if(is.null(click))
+  #     return()
+  #   leafletProxy("treemap2") %>%
+  #     removeMarker(click$id)
+  #   })
   
-
-  
-  
-  
+  ########################################################################
+  popup <- paste("<strong>Type: </strong>", newdata$spc_common,
+                 "<br><strong>Status: </strong>", newdata$status,
+                 "<br><strong>Address: </strong>", newdata$address)
   
   output$treemap2 <- renderLeaflet({ 
-    df <- newdata()
-    m <- leaflet(data = df) %>% addProviderTiles("CartoDB.Positron") %>% setView(-73.9712, 40.7831, zoom = 13)
-    m
+    leaflet() %>% 
+      addProviderTiles("CartoDB.Positron", providerTileOptions(noWrap = T)) %>% 
+      # addPolygons(data = combined, color = "black", weight = 1, 
+      #              fillOpacity = 0) %>%
+      addMarkers(lng = newdata$longitude, lat = newdata$latitude, 
+                 layerId = as.character(newdata$tree_id),
+                 popup = popup, icon = greenLeafIcon)
+    
   })
-  
-  
   
   observeEvent(input$treemap2_click, {
     clic <- input$treemap2_click
     click_lat <- as.numeric(clic$lat)
     click_lng <- as.numeric(clic$lng)
-    # click_dat <- reactiveValues(clic_data = data.frame(lng=numeric(), lat=numeric()))
     updateTextInput(session, inputId = "latitude", value = click_lat)
     updateTextInput(session, inputId = "longitude", value = click_lng)
+  })
+  
+  #vacant_id <- reactiveValues(id = NULL)
+  
+  #dataproxy <- reactiveValues(dframe = NULL)
+  #temp1 <- NULL
+  
+  observeEvent(input$add, {
+    if(length(vacant_id) == 0){
+      df <- newdata
+      new_id <- max(df$tree_id, na.rm = T) + 1
+    }
+    else if(length(vacant_id) > 1){
+      new_id <- vacant_id[length(vacant_id)]
+      vacant_id <- vacant_id[1:(length(vacant_id)-1)]
+    }
+    else{
+      new_id <- vacant_id
+      vacant_id <- numeric(0)
+    }
     
+    # if(is.null(temp1))
+    #   temp1 <- newdata
+    temp1 <- newdata
+    
+    n <- nrow(temp1)
+    temp1[n+1, ] <- temp1[n, ]
+    detection <- nbhood_detect(as.numeric(input$longitude), as.numeric(input$latitude))
+    temp1$latitude[n+1] <- as.numeric(input$latitude)
+    temp1$longitude[n+1] <- as.numeric(input$longitude)
+    temp1$status[n+1] <- input$status
+    temp1$spc_common[n+1] <- input$spc_common
+    temp1$borough[n+1] <- detection[1]
+    temp1$zip_city[n+1] <- detection[2]
+    temp1$tree_id[n+1] <- as.numeric(new_id)
+    temp1$address[n+1] <- input$address
+    temp1$created_at[n+1] <- Sys.Date()
+    temp1$health[n+1] <- input$health
+    temp1$curb_loc <- input$curb_loc
+    temp1$sidewalk <- input$sidewalk
+    
+    popup <- paste("<strong>Type: </strong>", input$spc_common,
+                   "<br><strong>Status: </strong>", input$status,
+                   "<br><strong>Address: </strong>", temp1$address[n+1])
+    
+    leafletProxy("treemap2") %>%
+      addMarkers(lng = as.numeric(input$longitude), 
+                 lat = as.numeric(input$latitude), icon = greenLeafIcon,
+                 layerId = new_id, popup = popup)
+    
+    save(vacant_id, file = "data/vacant_id.rdata")
+    saveRDS(temp1, file = "data/newdata.rds")
   })
   
-
-  finaltmp = eventReactive(input$update,{
-                df = newdata()
-                id = max(df$tree_id) +1
-                print(id)
-                rbinc(df,data.frame("tree_id" = id,
-                          "created_at" = input$created_at, "status" = input$status,
-                         "curb_loc" = as.character(input$curb_loc),
-                         "health" = as.character(input$health),
-                         "spc_common" = as.character(input$spc_common),
-                         "address" = as.character(input$address),
-                         "postcode" = input$postcode,
-                         "latitude" = as.numeric(input$latitude),
-                         "longitude" = as.numeric(input$longitude),
-                         "borough" = input$borough))
-
-                
-                  # names<-c("tree_id", "created_at","status","curb_loc","health","spc_common","address","postcode","latitude","longitude","borough") 
-                  # colnames(tmp)<-names
-                  # tmp$created_at = input$created_at
-                  # tmp$status = input$status
-                  # tmp$curb_loc = input$curb_loc
-                  # tmp$health = input$health
-                  # tmp$spc_common = input$spc_common
-                  # tmp$address = input$address
-                  # tmp$postcode = input$postcode
-                  # tmp$borough = input$borough
-                  # tmp$latitude = as.numeric(input$latitude)
-                  # tmp$longtitude = as.numeric(input$latitude)
-                  })
-  output$test_table = DT::renderDataTable(newdata())
+  treeid <- reactive({
+    marker <- input$treemap2_marker_click
+    marker$id
+  })  
   
+  observeEvent(input$treemap2_marker_click, {
+    marker <- input$treemap2_marker_click
+    updateTextInput(session, inputId = "latitude", value = marker$lat)
+    updateTextInput(session, inputId = "longitude", value = marker$lng)
+    
+    df <- newdata
+    chosen_tree <- df %>%
+      filter(tree_id == treeid())
+    updateSelectInput(session, inputId = "spc_common", selected = chosen_tree$spc_common)
+    updateSelectInput(session, inputId = "status", selected = chosen_tree$status)
+    updateSelectInput(session, inputId = "health", selected = chosen_tree$health)
+    updateSelectInput(session, inputId = "status", selected = chosen_tree$status)
+    updateSelectInput(session, inputId = "curb_loc", selected = chosen_tree$curb_loc)
+    updateTextInput(session, inputId = "address", value = chosen_tree$address)
+    updateTextInput(session, inputId = "postcode", value = chosen_tree$postcode)
+    updateSelectInput(session, inputId = "borough", selected = chosen_tree$borough)
+    updateSelectInput(session, inputId = "sidewalk", selected = chosen_tree$sidewalk)
+  })
   
+ # temp2 <- NULL
   observeEvent(input$update,{
-    df = finaltmp()
-    id = df$tree_id
+    id <- as.numeric(treeid())
+    # if(is.null(temp2))
+    #   temp2 <- newdata
+    temp2 <- newdata
+    temp2[temp2$tree_id == id, "spc_common"] <- input$spc_common
+    temp2[temp2$tree_id == id, "status"] <- input$status
+    temp2[temp2$tree_id == id, "curb_loc"] <- input$curb_loc
+    temp2[temp2$tree_id == id, "health"] <- input$health
+    temp2[temp2$tree_id == id, "address"] <- input$address
+    temp2[temp2$tree_id == id, "postcode"] <- input$postcode
+    temp2[temp2$tree_id == id, "borough"] <- input$borough
+    temp2[temp2$tree_id == id, "created_at"] <- Sys.Date()
+    
+    
+    updated_tree <- temp2[temp2$tree_id == id, ]
+    popup <- paste("<strong>Type: </strong>", updated_tree$spc_common,
+                   "<br><strong>Status: </strong>", updated_tree$status,
+                   "<br><strong>Address: </strong>", updated_tree$address)
+    
     leafletProxy("treemap2") %>%
-      addMarkers(data = df,  lng = ~longitude,
-                 lat = ~latitude,layerId = id ,icon = greenLeafIcon, label = paste("Tree ID = ",id,sep = " "))
+      removeMarker(layerId = id) %>%
+      addMarkers(lng = updated_tree$longitude, lat = updated_tree$latitude,
+                 layerId = id, icon = greenLeafIcon, popup = popup)
+    saveRDS(temp2, file = "data/newdata.rds")
   })
-  
-  
+  output$test_table = DT::renderDataTable(newdata)
+  #temp3 = NULL
   observeEvent(input$delete,{
-    click<-input$treemap2_marker_click
-    if(is.null(click))
-      return()
+    id <- treeid()
+    #vacant_id$id <- c(vacant_id$id, as.numeric(id))
+    # if(is.null(temp3))
+    #   temp3 <- newdata
+    temp3 <- newdata
+    temp3 <- temp3 %>%
+      filter(tree_id != as.numeric(id))
+    vacant_id <- c(vacant_id, as.numeric(id))
+    
+    save(vacant_id, file = "data/vacant_id.rdata")
+    saveRDS(temp3, file = "data/newdata.rds")
+    
     leafletProxy("treemap2") %>%
-      removeMarker(click$id)
-    })
+      removeMarker(layerId = as.character(id))
+  })
 }
+  
+  # Function 
+  # Tree types 
+  # observeEvent({
+  #   input$select_treetype 
+  #   input$borough}, {
+  #     b <- input$borough
+  #     
+  #     if(b == "Disable"){
+  #       leafletProxy("treemap2") %>%
+  #         clearMarkers() %>%
+  #         clearControls() %>%
+  #         removeLayersControl() %>%
+  #         clearGroup("b_polygon") %>%
+  #         clearGroup("Manhattan") %>%
+  #         clearGroup("Brooklyn") %>%
+  #         clearGroup("Queens") %>%
+  #         clearGroup("Staten Island") %>%
+  #         clearGroup("Bronx") %>%
+  #         flyTo(lng = NYC_coord[1], lat = NYC_coord[2], zoom = 10)
+  #     }
+  #     
+  #     else{
+  #       centroid <- gCentroid(combined[combined@data$boro_name == b, ])
+  #       leafletProxy("treemap2") %>%
+  #         clearMarkers() %>%
+  #         clearControls() %>%
+  #         removeLayersControl() %>%
+  #         clearGroup("b_polygon") %>%
+  #         clearGroup("Manhattan") %>%
+  #         clearGroup("Brooklyn") %>%
+  #         clearGroup("Queens") %>%
+  #         clearGroup("Staten Island") %>%
+  #         clearGroup("Bronx") %>%
+  #         flyTo(lng = centroid@coords[1], lat = centroid@coords[2], zoom = 11) %>%
+  #         addPolygons(data = combined[combined@data$boro_name == b, ],
+  #                     color = "lightblue", weight = 3,
+  #                     fillColor = "lightgreen", fillOpacity = 0.2,
+  #                     group = "b_polygon")
+  #     }
+  #     
+  #     if(input$select_treetype == "None"){
+  #       leafletProxy("treemap2") %>%
+  #         clearMarkers() %>%
+  #         clearControls() %>%
+  #         removeLayersControl() %>%
+  #         clearGroup("Manhattan") %>%
+  #         clearGroup("Brooklyn") %>%
+  #         clearGroup("Queens") %>%
+  #         clearGroup("Staten Island") %>%
+  #         clearGroup("Bronx") 
+  #     }
+  #     
+  #     else if(input$select_treetype == "All"){
+  #       filtered <- newdata %>%
+  #         filter(borough == b)
+  #       
+  #       popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+  #                      "<br><strong>Status: </strong>", filtered$status,
+  #                      "<br><strong>Address: </strong>", filtered$address)
+  #       
+  #       leafletProxy("treemap2") %>%
+  #         clearMarkers() %>%
+  #         clearControls() %>%
+  #         removeLayersControl() %>%
+  #         clearGroup("Manhattan") %>%
+  #         clearGroup("Brooklyn") %>%
+  #         clearGroup("Queens") %>%
+  #         clearGroup("Staten Island") %>%
+  #         clearGroup("Bronx") %>%
+  #         addMarkers(lng = filtered$longitude, lat = filtered$latitude,
+  #                    popup = popup, icon = greenLeafIcon, 
+  #                    layerId = as.character(filtered$tree_id))
+  #     }
+  #     
+  #     else{
+  #       filtered <- newdata %>%
+  #         filter(borough == b & spc_common == input$select_treetype)
+  #       popup <- paste("<strong>Type: </strong>", filtered$spc_common,
+  #                      "<br><strong>Status: </strong>", filtered$status,
+  #                      "<br><strong>Address: </strong>", filtered$address)
+  #       leafletProxy("treemap2") %>%
+  #         clearMarkers() %>%
+  #         clearControls() %>%
+  #         removeLayersControl() %>%
+  #         clearGroup("Manhattan") %>%
+  #         clearGroup("Brooklyn") %>%
+  #         clearGroup("Queens") %>%
+  #         clearGroup("Staten Island") %>%
+  #         clearGroup("Bronx") %>%
+  #         addMarkers(lng = filtered$longitude, lat = filtered$latitude,
+  #                    popup = popup, icon = greenLeafIcon, 
+  #                    layerId = as.character(filtered$tree_id)) 
+  #     }
+  #     
+  #   })
+  
+  ########################################################################
 
 

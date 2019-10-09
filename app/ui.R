@@ -16,7 +16,7 @@ dashboardPage(
                 pre = 'Year'),
     sidebarMenu(
       menuItem("Forest", tabName = "treemaps",icon = icon("map")),
-      menuItem("Update Forest", tabName = "treeupdate",icon = icon("tree")),
+      menuItem("Update Forest", tabName = "treeupdate",icon = icon("map")),
       menuItem("Tree Facts", tabName = "analysis", icon = icon("dashboard")),
       menuItem("Population", tabName = "analysis2",icon = icon("dashboard"))
     
@@ -136,16 +136,17 @@ dashboardPage(
                      box(width = NULL,
                          selectInput("curb_loc","Curb Location",choices = c("OnCurb","OffsetFromCurb"),selected = "OnCurb")),
                      box(width = NULL,
-                         dateInput('created_at', 
-                                        label = 'Date Today',
-                                        start = Sys.Date()
+                         selectInput('sidewalk', "Side Walk Status", choices = c("NoDamage","Damage"), selected = "NoDamage"
                                       ))),
-              column(width = 3,
+              column(width = 2,
                      box(width = NULL,
                      actionButton("update", "Update"))),
-              column(width = 3,
+              column(width = 2,
                      box(width = NULL,
                      actionButton("delete","Delete"))),
+              column(width = 2,
+                     box(width = NULL,
+                         actionButton("add","Add"))),
               column(width = 12,
                      box(width = NULL,
                          DT::dataTableOutput("test_table")))
