@@ -43,7 +43,7 @@ The app includes
 
 + **Contribution statement**: ([default](doc/a_note_on_contributions.md))
 
-All team members contributed to the app idea. AC cleaned and analyzed the Population data (New York City Population By Neighborhood Tabulation Areas). AC and DT explored the NYC Street Tree Data and created analytical tools for tree data. ZZ built the "Update Forest" feature of the app. ZZ explored and analyzed the air pollution data (NYCCAS Air Pollution Rasters). LC and XL built the R Shiny app frame, incorporated member contributions, and merged the final Shiny App product. AC and LC built the slide deck for in-class presentation.
+All team members contributed to the app idea. AC cleaned and analyzed the Population data (New York City Population By Neighborhood Tabulation Areas). AC and DT explored the NYC Street Tree Data and created analytical tools for tree data. LC built the shiny app baseline and "Forest" feature. ZZ built the "Update Forest" feature of the app. ZZ explored and analyzed the air pollution data (NYCCAS Air Pollution Rasters). LC and XL incorporated member contributions, and merged the final Shiny App product. AC and LC built the slide deck for in-class presentation.
 
 All team members contributed to the GitHub repository and prepared the presentation. All team members approve our work presented in our GitHub repository including this contribution statement.
 
