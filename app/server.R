@@ -28,9 +28,9 @@ load("data/pollution.RData")
 # save(vacant_id, file = "vacant_id.rdata")
 load("data/vacant_id.rdata")
 nbhood <- rgdal::readOGR("data/nbhood/geo_export_63264cca-db33-43e7-ac15-9019c83788c0.shp")
-df_2015 <- readRDS("data/sample_data_2015.rds")
+# df_2015 <- readRDS("data/sample_data_2015.rds")
 newdata <- readRDS("data/newdata.rds")
-df_2015 <- readRDS("data/newdata.rds")
+data_2015 <- readRDS("data/sample_data_2015.rds")
 population <- readRDS("data/population.rds")
 slim_sidewalk <- df_2015[,c("sidewalk","borough")]
 
